@@ -28,6 +28,13 @@ their world; otherwise a bundled starter world loads after a timeout.
 | `npm test` | Vitest unit + integration tests |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run build` | Build sanity (the bridge is dev-only by design) |
+| `npm run test:e2e` | Playwright acceptance tests: real browser, real Phaser, real bridge files |
+
+The acceptance suite automates the release-gate playthrough: intake, all six
+challenges (block programs loaded through a dev-only seam, then the real
+generator → sandbox → game path), bridge round-trips with the tests playing
+the harness, reload persistence, and export/import. What it does not judge is
+kid-facing feel — do a human playthrough for that.
 
 ## Layout
 

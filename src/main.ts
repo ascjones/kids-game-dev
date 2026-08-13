@@ -272,6 +272,20 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
   editor.setToolboxCategories(engine.toolboxCategories());
   renderPanel();
   autosaver.trigger();
+
+  if (import.meta.env.DEV) {
+    // Acceptance-test seam (dev only): lets Playwright load block programs
+    // directly — everything downstream (generator, sandbox, game, challenge
+    // checks) runs exactly as it does for hand-dragged blocks.
+    (window as unknown as Record<string, unknown>).__kidGame = {
+      loadWorkspace: (state: Record<string, unknown>) => {
+        editor.resetWorkspace();
+        editor.load(state);
+      },
+      currentChallengeId: () => engine.current()?.id ?? null,
+      getCode: () => editor.getCode(),
+    };
+  }
 }
 
 // ---- App entry: resume a project or run first-time intake -------------------
@@ -296,8 +310,15 @@ async function start(): Promise<void> {
   const intake = createIntake(intakeRoot, {
     onSubmit: async (idea) => {
       intake.showBuilding();
+      const timeoutOverride = Number(
+        new URLSearchParams(location.search).get('intakeTimeout') ?? '',
+      );
       const outcome = await submitIdea(
-        { sendDecision, waitForEnvironmentUpdate },
+        {
+          sendDecision,
+          waitForEnvironmentUpdate,
+          ...(timeoutOverride > 0 ? { timeoutMs: timeoutOverride } : {}),
+        },
         idea,
       );
       const result = await fetchEnvironment();
