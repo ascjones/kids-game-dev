@@ -84,7 +84,6 @@ export function createPlayTestControls(
   callbacks: PlayTestCallbacks,
 ): PlayTestHandle {
   container.classList.add('panel');
-  container.style.cssText += 'display:flex;gap:10px;align-items:center;';
 
   const playButton = document.createElement('button');
   playButton.className = 'kid-button';
@@ -94,7 +93,8 @@ export function createPlayTestControls(
   stopButton.textContent = '⏹ Stop';
   stopButton.disabled = true;
   const tip = document.createElement('span');
-  tip.textContent = 'Use the arrow keys while playing!';
+  tip.className = 'dock-tip';
+  tip.textContent = 'arrow keys to play!';
   container.append(playButton, stopButton, tip);
 
   let runtime: ApiRuntime | null = null;

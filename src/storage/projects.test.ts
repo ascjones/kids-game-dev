@@ -3,7 +3,13 @@ import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import { resetDbForTests } from './db';
-import { createAutosaver, loadProject, saveProject, type ProjectRecord } from './projects';
+import {
+  createAutosaver,
+  deleteProject,
+  loadProject,
+  saveProject,
+  type ProjectRecord,
+} from './projects';
 import { starterEnvironment } from '../game/starterEnvironment';
 
 function makeRecord(overrides: Partial<ProjectRecord> = {}): ProjectRecord {
@@ -40,6 +46,12 @@ describe('project persistence', () => {
   });
 
   it('loadProject returns null on an empty store', async () => {
+    expect(await loadProject()).toBeNull();
+  });
+
+  it('deleteProject clears the current project for a fresh start', async () => {
+    await saveProject(makeRecord());
+    await deleteProject();
     expect(await loadProject()).toBeNull();
   });
 });

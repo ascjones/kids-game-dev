@@ -257,17 +257,28 @@ export class PlatformerScene extends Phaser.Scene implements GameBackend {
     gfx.fillRoundedRect(0, 0, 100, 9, { tl: 5, tr: 5, bl: 0, br: 0 });
     finish('platform', 100, 24);
 
-    // Player: friendly blob with eyes and a smile.
+    // Player: a little cat — pointy ears, cat eyes, nose and whiskers.
     gfx.fillStyle(hexToInt(theme.player), 1);
-    gfx.fillRoundedRect(0, 0, 32, 44, 12);
+    gfx.fillTriangle(3, 12, 8, 0, 14, 10); // left ear
+    gfx.fillTriangle(18, 10, 24, 0, 29, 12); // right ear
+    gfx.fillStyle(shade(theme.player, -0.35), 1);
+    gfx.fillTriangle(6, 10, 8, 3, 12, 9); // inner ears
+    gfx.fillTriangle(20, 9, 24, 3, 26, 10);
+    gfx.fillStyle(hexToInt(theme.player), 1);
+    gfx.fillRoundedRect(0, 8, 32, 36, 12); // head + body
     gfx.fillStyle(0xffffff, 1);
-    gfx.fillCircle(10, 14, 6);
-    gfx.fillCircle(22, 14, 6);
+    gfx.fillCircle(10, 20, 5.5); // eyes
+    gfx.fillCircle(22, 20, 5.5);
     gfx.fillStyle(0x2b2440, 1);
-    gfx.fillCircle(11.5, 14, 3);
-    gfx.fillCircle(23.5, 14, 3);
-    gfx.fillStyle(0x2b2440, 1);
-    gfx.fillRoundedRect(10, 28, 12, 4, 2);
+    gfx.fillEllipse(10, 20, 3, 6); // tall cat pupils
+    gfx.fillEllipse(22, 20, 3, 6);
+    gfx.fillStyle(0xe58aa0, 1);
+    gfx.fillTriangle(13.5, 27, 18.5, 27, 16, 30.5); // pink nose
+    gfx.fillStyle(0xffffff, 0.85);
+    gfx.fillRect(1, 27, 9, 1.4); // whiskers
+    gfx.fillRect(1, 31, 8, 1.4);
+    gfx.fillRect(22, 27, 9, 1.4);
+    gfx.fillRect(23, 31, 8, 1.4);
     finish('player', 32, 44);
 
     // Collectible: a real five-point star with a glow rim.

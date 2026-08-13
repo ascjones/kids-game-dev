@@ -33,6 +33,12 @@ export async function hasProject(): Promise<boolean> {
   return (await loadProject()) !== null;
 }
 
+/** Remove the current project (the "start a new game" reset). */
+export async function deleteProject(): Promise<void> {
+  const db = await getDb();
+  await db.delete(PROJECT_STORE, CURRENT_KEY);
+}
+
 export interface Autosaver {
   /** Note a change; the actual write happens after the debounce window. */
   trigger(): void;

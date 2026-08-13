@@ -15,6 +15,7 @@ import { createIntake, ideaDecision } from './ui/intake';
 import { sendDecision, startInboxPolling } from './bridge/client';
 import {
   createAutosaver,
+  deleteProject,
   hasProject,
   loadProject,
   saveProject,
@@ -46,6 +47,8 @@ for (const type of ['keydown', 'keyup'] as const) {
 
 type EnvUpdateListener = () => void;
 const envUpdateListeners = new Set<EnvUpdateListener>();
+// Any wizard reply counts as progress on a pending wish.
+const wizardAnswerListeners = new Set<() => void>();
 
 startInboxPolling((message) => {
   if (message.type === 'environment_updated') {
@@ -53,6 +56,7 @@ startInboxPolling((message) => {
   } else if (message.type === 'message') {
     notice.celebrate(message.payload.text);
   }
+  for (const listener of [...wizardAnswerListeners]) listener();
 });
 
 // ---- Phaser boot ------------------------------------------------------------
@@ -130,15 +134,21 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
     },
   });
 
-  createGameMakerBox(document.querySelector<HTMLElement>('#game-maker-box')!, (text) => {
-    void sendDecision({ type: 'free_request', payload: { request: text } }).then((sent) => {
-      notice.info(
-        sent
-          ? 'Sent to the Game Wizard! Keep playing — your wish is being worked on.'
-          : "The Game Wizard is asleep right now, but your wish is saved for when it wakes up!",
-      );
-    });
-  });
+  const wizardBox = createGameMakerBox(
+    document.querySelector<HTMLElement>('#game-maker-box')!,
+    (text) => {
+      void sendDecision({ type: 'free_request', payload: { request: text } }).then((sent) => {
+        if (sent) {
+          wizardBox.setBusy(text);
+        } else {
+          notice.info(
+            "The Game Wizard is asleep right now, but your wish is saved for when it wakes up!",
+          );
+        }
+      });
+    },
+  );
+  wizardAnswerListeners.add(() => wizardBox.wishAnswered());
 
   function renderPanel(notYet = false): void {
     const current = engine.current();
@@ -322,7 +332,42 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
   blocksButton.className = 'kid-button';
   blocksButton.textContent = '🧩 Blocks (E)';
   blocksButton.onclick = () => toggleEditor();
-  document.querySelector<HTMLElement>('#play-controls')!.prepend(blocksButton);
+  const playControlsBar = document.querySelector<HTMLElement>('#play-controls')!;
+  playControlsBar.prepend(blocksButton);
+
+  // Minimize the dock to a single button so nothing blocks the view mid-game.
+  const dockToggle = document.createElement('button');
+  dockToggle.className = 'kid-button secondary dock-toggle';
+  dockToggle.textContent = '▲ hide';
+  dockToggle.onclick = () => {
+    const collapsed = playControlsBar.classList.toggle('collapsed');
+    dockToggle.textContent = collapsed ? '🎮' : '▲ hide';
+    dockToggle.title = collapsed ? 'Show the controls' : 'Hide the controls';
+  };
+  playControlsBar.prepend(dockToggle);
+
+  // Quit to intake for a brand new game — with a save reminder first.
+  const newGameButton = document.createElement('button');
+  newGameButton.className = 'kid-button secondary';
+  newGameButton.textContent = '🆕 New game';
+  newGameButton.onclick = async () => {
+    playTest?.stop();
+    const saveFirst = await notice.confirm(
+      'Before you start a new game — save this one to a file so you can bring it back later?',
+      '💾 Save it first',
+      'Skip saving',
+    );
+    if (saveFirst) downloadProject(collectRecord());
+    const start = await notice.confirm(
+      'Ready to start a brand new game? Your old one goes away (unless you saved it).',
+      'Yes, new game!',
+      'Keep playing this one',
+    );
+    if (!start) return;
+    await deleteProject();
+    location.reload();
+  };
+  playControlsBar.appendChild(newGameButton);
   document.addEventListener('keydown', (event) => {
     const target = event.target as HTMLElement | null;
     if (
