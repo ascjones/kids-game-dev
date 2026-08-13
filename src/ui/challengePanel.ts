@@ -21,6 +21,8 @@ export interface ChallengePanelCallbacks {
 
 export interface ChallengePanelHandle {
   render(view: PanelView): void;
+  /** Un-collapse (used when the panel joins the editor overlay). */
+  expand(): void;
 }
 
 export function createChallengePanel(
@@ -30,10 +32,33 @@ export function createChallengePanel(
   container.classList.add('panel');
 
   const content = document.createElement('div');
-  container.append(content);
+
+  // Dismissible: collapses to a small chip instead of disappearing, and
+  // reopens by itself when a challenge completes so success is never missed.
+  const collapseButton = document.createElement('button');
+  collapseButton.className = 'kid-button secondary';
+  collapseButton.textContent = '✕';
+  collapseButton.title = 'Hide the challenge';
+  collapseButton.style.cssText = 'float:right;padding:2px 10px;margin-left:8px;';
+  const chip = document.createElement('button');
+  chip.className = 'kid-button';
+  chip.textContent = '🎯 Challenge';
+  chip.hidden = true;
+  const setCollapsed = (collapsed: boolean) => {
+    container.classList.toggle('collapsed', collapsed);
+    content.hidden = collapsed;
+    collapseButton.hidden = collapsed;
+    chip.hidden = !collapsed;
+  };
+  collapseButton.onclick = () => setCollapsed(true);
+  chip.onclick = () => setCollapsed(false);
+
+  container.append(collapseButton, chip, content);
 
   return {
+    expand: () => setCollapsed(false),
     render(view: PanelView): void {
+      if (view.kind === 'completed') setCollapsed(false);
       content.innerHTML = '';
       if (view.kind === 'completed') {
         content.innerHTML = `
@@ -50,12 +75,12 @@ export function createChallengePanel(
       if (view.kind === 'free_play') {
         content.innerHTML = `
           <h2 style="margin:0;">🏆 You finished every challenge!</h2>
-          <p>Your whole toolbox is unlocked. Build anything you can imagine — and if you want new stuff in your world, ask the robot game maker in the corner!</p>
+          <p>Your whole toolbox is unlocked. Build anything you can imagine — and if you want new stuff in your world, ask the Game Wizard in the corner!</p>
         `;
         return;
       }
       const notYetBanner = view.notYet
-        ? `<p class="not-yet" style="background:var(--accent-soft);border-radius:8px;padding:8px;">🧐 Not yet! Your blocks ran fine, but the challenge isn't done. ${
+        ? `<p class="not-yet" style="background:rgba(124,92,255,0.3);border-radius:8px;padding:8px;">🧐 Not yet! Your blocks ran fine, but the challenge isn't done. ${
             view.hasMoreHints ? 'Try the hint button below!' : 'Look at the hints again — you are close!'
           }</p>`
         : '';

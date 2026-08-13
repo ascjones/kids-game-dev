@@ -25,9 +25,9 @@ test('submitting an idea writes a new_game_idea decision to the outbox', async (
 
 test('the free-request box sends the child\'s words verbatim', async ({ page }) => {
   await bootToWorkbench(page);
-  await page.locator('#game-maker-box input').fill('make my player a wizard');
+  await page.locator('#game-maker-box textarea').fill('make my player a wizard');
   await page.getByRole('button', { name: 'Send' }).click();
-  await expect(page.locator('.kid-notice').last()).toContainText('Sent to the game maker');
+  await expect(page.locator('.kid-notice').last()).toContainText('Sent to the Game Wizard');
   await expect(() => {
     const files = outboxFiles('free_request');
     expect(files).toHaveLength(1);

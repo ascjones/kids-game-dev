@@ -134,8 +134,8 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
     void sendDecision({ type: 'free_request', payload: { request: text } }).then((sent) => {
       notice.info(
         sent
-          ? 'Sent to the game maker! Keep playing — your wish is being worked on.'
-          : "The game maker isn't listening right now, but your wish is saved for later!",
+          ? 'Sent to the Game Wizard! Keep playing — your wish is being worked on.'
+          : "The Game Wizard is asleep right now, but your wish is saved for when it wakes up!",
       );
     });
   });
@@ -304,9 +304,19 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
 
   // Block editor overlay: Blocks button, "e", or Escape to close.
   const editorOverlay = document.querySelector<HTMLElement>('#editor-overlay')!;
+  const challengePanelElement = document.querySelector<HTMLElement>('#challenge-panel')!;
+  const challengeSlot = document.querySelector<HTMLElement>('#challenge-slot')!;
+  const challengeHome = challengePanelElement.parentElement!;
   function toggleEditor(show = editorOverlay.hidden): void {
     editorOverlay.hidden = !show;
-    if (show) editor.refresh();
+    if (show) {
+      // The challenge belongs beside the blocks while building.
+      challengeSlot.appendChild(challengePanelElement);
+      panel.expand();
+      editor.refresh();
+    } else {
+      challengeHome.appendChild(challengePanelElement);
+    }
   }
   const blocksButton = document.createElement('button');
   blocksButton.className = 'kid-button';
@@ -373,7 +383,7 @@ async function start(): Promise<void> {
       const result = await fetchEnvironment();
       intake.dismiss();
       notice.info(
-        "The game maker is building your world — it'll pop in here when it's ready. Start playing meanwhile!",
+        "The Game Wizard is conjuring your world — it'll appear here when the spell is ready. Start playing meanwhile!",
       );
       await bootWorkbench({
         environment: result.environment,

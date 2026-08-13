@@ -20,16 +20,22 @@ export interface EditorHandle {
   tidy(): void;
 }
 
-const kidTheme = Blockly.Theme.defineTheme('kid-bright', {
-  name: 'kid-bright',
+const kidTheme = Blockly.Theme.defineTheme('kid-console', {
+  name: 'kid-console',
   base: Blockly.Themes.Zelos,
   componentStyles: {
-    workspaceBackgroundColour: '#f7f5ff',
-    toolboxBackgroundColour: '#efeaff',
-    flyoutBackgroundColour: '#e6defc',
-    scrollbarColour: '#c9bcf2',
+    workspaceBackgroundColour: '#0e0b1c',
+    toolboxBackgroundColour: '#17132a',
+    toolboxForegroundColour: '#c9f7d8',
+    flyoutBackgroundColour: '#241d3f',
+    flyoutForegroundColour: '#c9f7d8',
+    scrollbarColour: '#3a2f63',
+    insertionMarkerColour: '#8ef0a9',
   },
-  fontStyle: { family: '"Comic Sans MS", "Chalkboard SE", sans-serif', size: 12 },
+  fontStyle: {
+    family: 'ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace',
+    size: 12,
+  },
 });
 
 export function createEditor(container: HTMLElement): EditorHandle {

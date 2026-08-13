@@ -17,7 +17,7 @@ export interface EnvironmentSyncDeps {
 }
 
 export const NEW_WORLD_MESSAGE =
-  'The game maker finished a new world for you! Here it is — your blocks and challenges came along too.';
+  'The Game Wizard finished a new world for you! Here it is — your blocks and challenges came along too.';
 
 export class EnvironmentSync {
   private deps: EnvironmentSyncDeps;

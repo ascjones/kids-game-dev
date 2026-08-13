@@ -89,7 +89,7 @@ export function createIntake(container: HTMLElement, callbacks: IntakeCallbacks)
       buildButton.disabled = true;
       textarea.disabled = true;
       building.hidden = false;
-      building.innerHTML = '🚀 <strong>Sending your idea to the game maker…</strong>';
+      building.innerHTML = '🧙 <strong>Sending your idea to the Game Wizard…</strong>';
     },
     dismiss(): void {
       container.remove();

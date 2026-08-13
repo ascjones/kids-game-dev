@@ -1,5 +1,5 @@
-// The child's line to the harness (free-form creative requests): its own
-// floating box, top-right, with the robot game maker's face on it.
+// The child's line to the harness (free-form creative requests): a little
+// robot console, top-right — fixed-width font, dark screen, blinking cursor.
 
 export function createGameMakerBox(
   container: HTMLElement,
@@ -8,19 +8,17 @@ export function createGameMakerBox(
   container.classList.add('panel');
   container.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-      <span class="robot" style="font-size:2.4rem;line-height:1;">🤖</span>
+      <span class="robot" style="font-size:2.4rem;line-height:1;">🧙</span>
       <div>
-        <div style="font-size:1.35rem;font-weight:bold;">The Game Maker</div>
-        <div style="font-size:0.95rem;opacity:0.75;">Ask me to change your game!</div>
+        <div style="font-size:1.2rem;font-weight:bold;letter-spacing:1px;">THE GAME WIZARD</div>
+        <div style="font-size:0.95rem;opacity:0.8;">&gt; wish for anything in your game<span class="gm-cursor">▊</span></div>
       </div>
     </div>
-    <div style="display:flex;gap:8px;">
-      <input type="text" placeholder="like: make it rain tacos!"
-        style="flex:1;padding:12px;border:3px solid var(--panel-border);border-radius:12px;font-family:inherit;font-size:1.15rem;" />
-      <button class="kid-button" style="font-size:1.15rem;">Send</button>
-    </div>
+    <textarea rows="6" placeholder="like: make it rain tacos!"
+      style="width:100%;resize:vertical;padding:12px;border:2px solid var(--console-border);border-radius:10px;background:var(--console-bg-deep);color:#8ef0a9;font-family:inherit;font-size:1.15rem;line-height:1.5;"></textarea>
+    <button class="kid-button" style="margin-top:8px;width:100%;font-size:1.05rem;font-family:inherit;">▶ SEND</button>
   `;
-  const input = container.querySelector('input')!;
+  const input = container.querySelector('textarea')!;
   const button = container.querySelector('button')!;
   const send = () => {
     const text = input.value.trim();
@@ -30,6 +28,10 @@ export function createGameMakerBox(
   };
   button.onclick = send;
   input.onkeydown = (event) => {
-    if (event.key === 'Enter') send();
+    // Enter sends; Shift+Enter makes a new line for longer wishes.
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      send();
+    }
   };
 }

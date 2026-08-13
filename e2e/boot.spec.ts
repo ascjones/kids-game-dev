@@ -47,7 +47,7 @@ test('the block editor opens as an overlay via button, E key, and Escape', async
   await expect(overlay).toBeHidden();
 
   // Typing an "e" into the free-request box must not toggle the editor.
-  await page.locator('#game-maker-box input').fill('make everything electric');
+  await page.locator('#game-maker-box textarea').fill('make everything electric');
   await expect(overlay).toBeHidden();
 });
 
@@ -55,7 +55,7 @@ test('spaces and arrows type normally into text fields despite Phaser key captur
   page,
 }) => {
   await bootToWorkbench(page);
-  const input = page.locator('#game-maker-box input');
+  const input = page.locator('#game-maker-box textarea');
   await input.click();
   // Real key events (not fill) so Phaser's window-level capture is exercised.
   await input.pressSequentially('a big castle');
