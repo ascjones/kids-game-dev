@@ -7,6 +7,7 @@ const baseline: SessionState = { ...BASELINE_SESSION, initialPlatformCount: 3, p
 // Each of the six checks: one satisfying state, and the baseline must fail (KTD8).
 const satisfying: Record<CheckName, Partial<SessionState>> = {
   platform_added: { platformCount: 4 },
+  moved: { moved: true },
   jumped: { jumped: true },
   collectible_added: { collectiblesSpawned: 1 },
   score_on_collect: { scoreIncreasedOnCollect: true, collectedCount: 1, score: 1 },

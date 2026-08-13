@@ -9,6 +9,7 @@ type Check = (state: SessionState, params: Record<string, number>) => boolean;
 export const CHECKS: Record<CheckName, Check> = {
   platform_added: (state, params) =>
     state.platformCount - state.initialPlatformCount >= (params.minNew ?? 1),
+  moved: (state) => state.moved,
   jumped: (state) => state.jumped,
   collectible_added: (state, params) => state.collectiblesSpawned >= (params.minNew ?? 1),
   score_on_collect: (state) => state.scoreIncreasedOnCollect,

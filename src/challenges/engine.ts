@@ -21,7 +21,16 @@ export class ChallengeEngine {
 
   constructor(challenges: ChallengeDef[], progress?: ChallengeProgress) {
     this.challenges = challenges;
-    this.state = progress ?? emptyProgress();
+    const state = progress ?? emptyProgress();
+    // Challenge content is harness-editable data, so a stored index can drift
+    // when challenges are inserted or reordered between sessions. The set of
+    // completed ids is the durable truth: resume at the first open challenge.
+    // (A challenge completed but not yet advanced past resumes as advanced.)
+    const firstOpen = challenges.findIndex((c) => !state.completedIds.includes(c.id));
+    this.state = {
+      ...state,
+      currentIndex: firstOpen === -1 ? challenges.length : firstOpen,
+    };
   }
 
   /** The active challenge, or null when all are done (free play). */

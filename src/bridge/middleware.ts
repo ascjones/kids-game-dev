@@ -109,6 +109,23 @@ export function handleBridgeRequest(
   if (method === 'GET' && url.startsWith('/inbox')) {
     return { status: 200, body: { ok: true, messages: readInbox(dirs) } };
   }
+  if (method === 'POST' && url.startsWith('/debug')) {
+    // Dev diagnostics channel (not part of the harness message contract):
+    // the app drops session breadcrumbs here so a harness session can debug
+    // "why didn't my challenge complete" without asking the child anything.
+    try {
+      const parsed = JSON.parse(rawBody);
+      const debugDir = path.join(path.dirname(dirs.outbox), 'debug');
+      fs.mkdirSync(debugDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(debugDir, `${Date.now()}-session.json`),
+        JSON.stringify(parsed, null, 2).slice(0, 100_000),
+      );
+      return { status: 200, body: { ok: true } };
+    } catch {
+      return { status: 400, body: { ok: false, error: 'not JSON' } };
+    }
+  }
   return { status: 404, body: { ok: false, error: 'unknown bridge route' } };
 }
 

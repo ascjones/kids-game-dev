@@ -8,3 +8,4 @@ bridge/outbox/*.json
 bridge/outbox/processed/
 bridge/inbox/*.json
 bridge/inbox/processed/
+bridge/debug/

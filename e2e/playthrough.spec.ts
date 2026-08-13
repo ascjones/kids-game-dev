@@ -13,7 +13,7 @@ async function expectCompletedAndAdvance(page: Page, explanationBit: string): Pr
   await page.getByRole('button', { name: 'Next challenge →' }).click();
 }
 
-test('all six challenges are completable with blocks only', async ({ page }) => {
+test('all challenges are completable with blocks only', async ({ page }) => {
   test.setTimeout(180_000);
   await bootToWorkbench(page);
 
@@ -29,19 +29,26 @@ test('all six challenges are completable with blocks only', async ({ page }) => 
   await expectCompletedAndAdvance(page, 'press up');
   await page.keyboard.up('ArrowUp');
 
-  // 3. Add a collectible
+  // 3. Learn to run (hold the right arrow during the play test)
+  await expect(page.locator('#challenge-panel')).toContainText('run');
+  await playProgram(page, PROGRAMS.runOnArrowKeys);
+  await page.keyboard.down('ArrowRight');
+  await expectCompletedAndAdvance(page, 'YOU steer the player');
+  await page.keyboard.up('ArrowRight');
+
+  // 4. Add a collectible
   await playProgram(page, PROGRAMS.addStar);
   await expectCompletedAndAdvance(page, 'new star into the world');
 
-  // 4. Increase score on collect (run right through the star on the ground)
+  // 5. Increase score on collect (run right through the star on the ground)
   await playProgram(page, PROGRAMS.scoreOnCollect);
   await expectCompletedAndAdvance(page, 'collect a star, score goes up');
 
-  // 5. Make an enemy patrol (it must reach both patrol ends)
+  // 6. Make an enemy patrol (it must reach both patrol ends)
   await playProgram(page, PROGRAMS.patrolEnemies);
   await expectCompletedAndAdvance(page, 'gave the enemy a brain');
 
-  // 6. Win at the goal flag
+  // 7. Win at the goal flag
   await playProgram(page, PROGRAMS.winAtGoal);
   await expect(page.locator('#challenge-panel .explanation')).toContainText('YOU WIN', {
     timeout: 20_000,
@@ -51,7 +58,7 @@ test('all six challenges are completable with blocks only', async ({ page }) => 
   // Free play unlocks the whole toolbox, and every completion reached the bridge.
   await expect(page.locator('#challenge-panel')).toContainText('finished every challenge');
   await expect(() => {
-    expect(outboxFiles('challenge_completed')).toHaveLength(6);
+    expect(outboxFiles('challenge_completed')).toHaveLength(7);
   }).toPass();
 });
 

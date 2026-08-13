@@ -38,10 +38,10 @@ export function dropInbox(name: string, message: unknown): void {
 
 /** Get past intake to the workbench, using the bundled starter world. */
 export async function bootToWorkbench(page: Page, idea = 'a brave test robot'): Promise<void> {
-  await page.goto('/?intakeTimeout=700');
+  await page.goto('/');
   await page.locator('#intake-root textarea').fill(idea);
   await page.locator('#intake-root button.kid-button').click();
-  await expect(page.locator('#workbench')).toBeVisible();
+  await expect(page.getByRole('button', { name: '▶ Play test' })).toBeVisible();
   await page.waitForFunction(() => '__kidGame' in window);
 }
 
@@ -73,6 +73,22 @@ export const chain = (blocks: Array<Record<string, unknown>>): unknown =>
 
 export const PROGRAMS = {
   addPlatform: [onStart({ type: 'spawn_platform', fields: { X: 400, Y: 300, WIDTH: 140 } })],
+  runOnArrowKeys: [
+    {
+      type: 'event_key',
+      x: 20,
+      y: 20,
+      fields: { KEY: 'right' },
+      inputs: { DO: { block: { type: 'move_right', fields: { SPEED: 200 } } } },
+    },
+    {
+      type: 'event_key',
+      x: 20,
+      y: 160,
+      fields: { KEY: 'left' },
+      inputs: { DO: { block: { type: 'move_left', fields: { SPEED: 200 } } } },
+    },
+  ],
   jumpOnUpKey: [
     {
       type: 'event_key',

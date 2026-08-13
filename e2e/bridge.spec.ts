@@ -25,7 +25,7 @@ test('submitting an idea writes a new_game_idea decision to the outbox', async (
 
 test('the free-request box sends the child\'s words verbatim', async ({ page }) => {
   await bootToWorkbench(page);
-  await page.locator('#challenge-panel input').fill('make my player a wizard');
+  await page.locator('#game-maker-box input').fill('make my player a wizard');
   await page.getByRole('button', { name: 'Send' }).click();
   await expect(page.locator('.kid-notice').last()).toContainText('Sent to the game maker');
   await expect(() => {
@@ -38,7 +38,7 @@ test('the free-request box sends the child\'s words verbatim', async ({ page }) 
 test('a harness message appears to the child on the next poll', async ({ page }) => {
   await bootToWorkbench(page);
   dropInbox('msg-1.json', { type: 'message', payload: { text: 'I built your castle!' } });
-  await expect(page.locator('.kid-notice').last()).toContainText('I built your castle!', {
+  await expect(page.locator('.kid-notice', { hasText: 'I built your castle!' })).toBeVisible({
     timeout: 10_000,
   });
 });

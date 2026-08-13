@@ -65,6 +65,7 @@ export const environmentSchema = z.object({
   collectibles: z.array(collectibleSchema).default([]),
   enemies: z.array(enemySchema).default([]),
   goal: goalSchema.optional(),
+  weather: z.enum(['clear', 'rain']).default('clear'),
   sounds: z.record(z.string(), z.string()).default({}),
 });
 

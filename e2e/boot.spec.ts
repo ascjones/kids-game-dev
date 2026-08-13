@@ -28,3 +28,36 @@ test('intake falls back to the starter world and boots a working game canvas', a
   await expect(page.locator('#js-view')).toContainText('Drag some blocks');
   expect(pageErrors).toEqual([]);
 });
+
+test('the block editor opens as an overlay via button, E key, and Escape', async ({ page }) => {
+  await bootToWorkbench(page);
+  const overlay = page.locator('#editor-overlay');
+  await expect(overlay).toBeHidden();
+
+  await page.getByRole('button', { name: '🧩 Blocks (E)' }).click();
+  await expect(overlay).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Blocks workspace.' })).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(overlay).toBeHidden();
+
+  await page.keyboard.press('e');
+  await expect(overlay).toBeVisible();
+  await page.keyboard.press('e');
+  await expect(overlay).toBeHidden();
+
+  // Typing an "e" into the free-request box must not toggle the editor.
+  await page.locator('#game-maker-box input').fill('make everything electric');
+  await expect(overlay).toBeHidden();
+});
+
+test('spaces and arrows type normally into text fields despite Phaser key capture', async ({
+  page,
+}) => {
+  await bootToWorkbench(page);
+  const input = page.locator('#game-maker-box input');
+  await input.click();
+  // Real key events (not fill) so Phaser's window-level capture is exercised.
+  await input.pressSequentially('a big castle');
+  await expect(input).toHaveValue('a big castle');
+});

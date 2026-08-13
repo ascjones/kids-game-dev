@@ -46,6 +46,7 @@ export function buildSessionState(stats: RuntimeStats, scene: SceneStats): Sessi
   return {
     initialPlatformCount: scene.initialPlatformCount,
     platformCount: scene.platformCount,
+    moved: stats.moved,
     jumped: stats.jumped,
     collectiblesSpawned: stats.collectiblesSpawned,
     collectedCount: stats.collectedCount,
@@ -57,17 +58,21 @@ export function buildSessionState(stats: RuntimeStats, scene: SceneStats): Sessi
   };
 }
 
+export type SessionEnd = 'stop' | 'error' | 'success' | 'cancelled';
+
 export interface PlayTestCallbacks {
   getCode(): string;
   /** Called ~4×/second while playing; return true once the goal state is reached. */
   onLiveState(state: SessionState): boolean;
-  /** Called when a session ends (stop button, error, or live success). */
-  onSessionEnd(state: SessionState, endedBy: 'stop' | 'error' | 'success'): void;
+  /** Called when a session ends (stop button, error, live success, or cancellation). */
+  onSessionEnd(state: SessionState, endedBy: SessionEnd): void;
 }
 
 export interface PlayTestHandle {
   isPlaying(): boolean;
   stop(): void;
+  /** End the session without judging it (e.g. the blocks changed mid-play). */
+  cancel(): void;
 }
 
 const LIVE_CHECK_INTERVAL_MS = 250;
@@ -95,7 +100,7 @@ export function createPlayTestControls(
   let runtime: ApiRuntime | null = null;
   let liveTimer: ReturnType<typeof setInterval> | null = null;
 
-  function end(endedBy: 'stop' | 'error' | 'success'): void {
+  function end(endedBy: SessionEnd): void {
     if (!runtime) return;
     const stats = runtime.stats;
     runtime = null;
@@ -140,5 +145,6 @@ export function createPlayTestControls(
   return {
     isPlaying: () => runtime !== null,
     stop: () => end('stop'),
+    cancel: () => end('cancelled'),
   };
 }

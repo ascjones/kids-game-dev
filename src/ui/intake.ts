@@ -3,30 +3,13 @@ import type { DecisionInput } from '../bridge/messages';
 // R1: first-run intake — the child describes their game and picks a genre.
 // Platformer is live; the other five genres are visible but locked.
 
-export interface IntakeFlowDeps {
-  sendDecision(input: DecisionInput): Promise<boolean>;
-  /** Resolves true when an environment_updated arrives, false on timeout. */
-  waitForEnvironmentUpdate(timeoutMs: number): Promise<boolean>;
-  timeoutMs?: number;
-}
-
-export const INTAKE_TIMEOUT_MS = 90_000;
-
 /**
- * R2: send the idea to the harness and wait for its world. On timeout the
- * bundled starter takes over; the idea stays queued in the outbox for the
- * harness to pick up whenever it starts listening.
+ * R2: the child never waits on the harness. The idea goes to the outbox, play
+ * starts immediately in whatever world is available, and the harness's world
+ * arrives later through the environment-sync path.
  */
-export async function submitIdea(
-  deps: IntakeFlowDeps,
-  idea: string,
-): Promise<'harness' | 'fallback'> {
-  await deps.sendDecision({
-    type: 'new_game_idea',
-    payload: { idea, genre: 'platformer' },
-  });
-  const updated = await deps.waitForEnvironmentUpdate(deps.timeoutMs ?? INTAKE_TIMEOUT_MS);
-  return updated ? 'harness' : 'fallback';
+export function ideaDecision(idea: string): DecisionInput {
+  return { type: 'new_game_idea', payload: { idea, genre: 'platformer' } };
 }
 
 export interface IntakeCallbacks {
@@ -106,7 +89,7 @@ export function createIntake(container: HTMLElement, callbacks: IntakeCallbacks)
       buildButton.disabled = true;
       textarea.disabled = true;
       building.hidden = false;
-      building.innerHTML = '🔨 <strong>Building your world…</strong> the game maker is thinking!';
+      building.innerHTML = '🚀 <strong>Sending your idea to the game maker…</strong>';
     },
     dismiss(): void {
       container.remove();

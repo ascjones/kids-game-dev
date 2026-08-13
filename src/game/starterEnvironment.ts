@@ -23,8 +23,15 @@ export const starterEnvironment: Environment = {
     { x: 250, y: 350, width: 160, height: 24 },
     { x: 520, y: 260, width: 160, height: 24 },
   ],
-  collectibles: [{ x: 520, y: 210, kind: 'star' }],
+  collectibles: [
+    // Two stars sit on the ground path so scoring never depends on
+    // platforming skill (or on having discovered movement blocks yet).
+    { x: 300, y: 412, kind: 'star' },
+    { x: 430, y: 412, kind: 'star' },
+    { x: 520, y: 210, kind: 'star' },
+  ],
   enemies: [{ x: 620, y: 420, patrol: { minX: 480, maxX: 760 }, speed: 0 }],
   goal: { x: 750, y: 400, kind: 'flag' },
+  weather: 'clear',
   sounds: { jump: 'boing', collect: 'ding', win: 'tada' },
 };

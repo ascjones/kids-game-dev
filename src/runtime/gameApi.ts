@@ -18,6 +18,7 @@ export interface GameBackend {
 }
 
 export interface RuntimeStats {
+  moved: boolean;
   jumped: boolean;
   score: number;
   scoreIncreasedOnCollect: boolean;
@@ -75,6 +76,7 @@ interface ScheduledTask {
 
 function freshStats(): RuntimeStats {
   return {
+    moved: false,
     jumped: false,
     score: 0,
     scoreIncreasedOnCollect: false,
@@ -182,6 +184,7 @@ export class ApiRuntime {
   private move(velocity: number): void {
     this.backend.setVelocityX(velocity);
     this.lastMoveSource = this.activeSource;
+    if (velocity !== 0) this.stats.moved = true;
   }
 
   /** Subscribe to errors thrown by kid handlers during the run. */

@@ -14,58 +14,104 @@
   box-sizing: border-box;
 }
 
+html,
 body {
+  height: 100%;
   margin: 0;
+  overflow: hidden;
   background: linear-gradient(180deg, #f4f0ff 0%, #e8f4ff 100%);
-  min-height: 100vh;
 }
 
-#app {
-  max-width: 1500px;
-  margin: 0 auto;
-  padding: 12px;
+/* The game fills the screen; everything else floats above it. */
+#game-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: #87ceeb;
 }
 
-#workbench {
+#play-controls {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+}
+
+#challenge-panel {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  width: 350px;
+  max-height: calc(100vh - 20px);
+  overflow-y: auto;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+#game-maker-box {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  width: 420px;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.95);
+  font-family: 'Chalkboard SE', 'Comic Sans MS', 'Marker Felt', 'Segoe Print', cursive;
+}
+
+/* Block editor overlay: toggled with the Blocks button or the E key. */
+#editor-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(43, 36, 64, 0.45);
   display: flex;
-  gap: 12px;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: center;
 }
 
-#workbench[hidden] {
+#editor-overlay[hidden] {
   display: none;
 }
 
-#left-pane {
-  flex: 0 0 820px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-#right-pane {
-  flex: 1 1 auto;
-  min-width: 480px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-#game-container {
+#editor-frame {
+  width: 94vw;
+  height: 90vh;
+  background: var(--panel-bg);
   border: 3px solid var(--panel-border);
-  border-radius: 12px;
-  overflow: hidden;
-  background: #87ceeb;
-  width: 800px;
-  height: 480px;
+  border-radius: 14px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#editor-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 8px;
 }
 
 #blockly-container {
-  height: 460px;
+  flex: 3;
+  min-width: 0;
   border: 3px solid var(--panel-border);
   border-radius: 12px;
   overflow: hidden;
   background: var(--panel-bg);
+}
+
+#js-view {
+  flex: 2;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#intake-root {
+  position: relative;
+  z-index: 30;
 }
 
 .panel {

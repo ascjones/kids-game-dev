@@ -51,7 +51,7 @@ describe('loadEnvironmentFromData', () => {
   it('ignores unknown extra fields instead of failing', () => {
     const withExtras = {
       ...validEnvironment,
-      weather: 'rainbow',
+      vibes: 'rainbow',
       platforms: [{ x: 1, y: 2, width: 10, bounciness: 3 }],
     };
     const result = loadEnvironmentFromData(withExtras);

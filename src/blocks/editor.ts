@@ -14,6 +14,10 @@ export interface EditorHandle {
   redo(): void;
   resetWorkspace(): void;
   onChange(listener: () => void): void;
+  /** Re-measure the workspace after its container becomes visible or resizes. */
+  refresh(): void;
+  /** Arrange all blocks into a tidy column (Blockly's clean-up). */
+  tidy(): void;
 }
 
 const kidTheme = Blockly.Theme.defineTheme('kid-bright', {
@@ -60,5 +64,36 @@ export function createEditor(container: HTMLElement): EditorHandle {
     redo: () => workspace.undo(true),
     resetWorkspace: () => workspace.clear(),
     onChange: (listener) => changeListeners.push(listener),
+    refresh: () => Blockly.svgResize(workspace),
+    tidy: () => {
+      // Group first (event blocks and their contents on top, loose action
+      // blocks below, stable within each group), then let Blockly's clean-up
+      // snap everything into one aligned column with real spacing.
+      const rank = (type: string) => (type.startsWith('event_') ? 0 : 1);
+      const tops = workspace.getTopBlocks(true);
+      const sorted = [...tops].sort((a, b) => rank(a.type) - rank(b.type));
+      Blockly.Events.setGroup(true);
+      try {
+        sorted.forEach((block, index) => {
+          const position = block.getRelativeToSurfaceXY();
+          block.moveBy(24 - position.x, 24 + index * 48 - position.y);
+        });
+        workspace.cleanUp();
+        // cleanUp columnizes but keeps the column where it was; pin it to the
+        // top-left corner and bring it into view.
+        const tops = workspace.getTopBlocks(true);
+        if (tops.length > 0) {
+          const first = tops[0].getRelativeToSurfaceXY();
+          const dx = 16 - first.x;
+          const dy = 16 - first.y;
+          if (dx !== 0 || dy !== 0) {
+            for (const block of tops) block.moveBy(dx, dy);
+          }
+        }
+        workspace.scrollCenter();
+      } finally {
+        Blockly.Events.setGroup(false);
+      }
+    },
   };
 }

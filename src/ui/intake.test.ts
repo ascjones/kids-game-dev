@@ -1,43 +1,18 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
 import type { DecisionInput } from '../bridge/messages';
-import { createIntake, submitIdea } from './intake';
+import { createIntake, ideaDecision } from './intake';
 import { EnvironmentSync, NEW_WORLD_MESSAGE } from '../game/environmentSync';
 import { starterEnvironment } from '../game/starterEnvironment';
 import type { LoadResult } from '../game/environmentLoader';
 
-describe('submitIdea flow', () => {
-  it('sends a new_game_idea decision containing the idea text and genre', async () => {
-    const sent: DecisionInput[] = [];
-    const result = await submitIdea(
-      {
-        sendDecision: async (input) => {
-          sent.push(input);
-          return true;
-        },
-        waitForEnvironmentUpdate: async () => true,
-      },
-      'a ninja cat in a candy world',
-    );
-    expect(sent).toEqual([
-      {
-        type: 'new_game_idea',
-        payload: { idea: 'a ninja cat in a candy world', genre: 'platformer' },
-      },
-    ]);
-    expect(result).toBe('harness');
-  });
-
-  it('returns fallback when no environment update arrives before the timeout', async () => {
-    const result = await submitIdea(
-      {
-        sendDecision: async () => true,
-        waitForEnvironmentUpdate: async () => false,
-        timeoutMs: 10,
-      },
-      'any idea',
-    );
-    expect(result).toBe('fallback');
+describe('ideaDecision', () => {
+  it('builds a new_game_idea decision containing the idea text and genre', () => {
+    const decision: DecisionInput = ideaDecision('a ninja cat in a candy world');
+    expect(decision).toEqual({
+      type: 'new_game_idea',
+      payload: { idea: 'a ninja cat in a candy world', genre: 'platformer' },
+    });
   });
 });
 

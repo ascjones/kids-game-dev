@@ -13,7 +13,10 @@
       "check": "platform_added",
       "params": {},
       "explanation": "You did it! Your blocks told the game to build a platform, and the game listened. That platform is YOURS — you made it with code!",
-      "toolbox": ["events", "world"]
+      "toolbox": [
+        "events",
+        "world"
+      ]
     },
     {
       "id": "make-jump",
@@ -27,7 +30,29 @@
       "check": "jumped",
       "params": {},
       "explanation": "Boing! You connected a key to an action: press up, and your code makes the player jump. That is exactly how real games work!",
-      "toolbox": ["events", "world", "motion"]
+      "toolbox": [
+        "events",
+        "world",
+        "motion"
+      ]
+    },
+    {
+      "id": "learn-to-run",
+      "title": "Make your player run!",
+      "prompt": "Your player wants to explore! Make them run to the right and to the left when you press the arrow keys.",
+      "hints": [
+        "The Moving group has \"move right\" and \"move left\" blocks.",
+        "Running needs keys! Put \"move right\" inside a \"when the right arrow key is pressed\" block.",
+        "Make another one for left. Then press Play test and zoom around with the arrow keys!"
+      ],
+      "check": "moved",
+      "params": {},
+      "explanation": "Zoom! Now YOU steer the player: your code listens to the arrow keys and moves them. Running plus jumping means you can reach anything!",
+      "toolbox": [
+        "events",
+        "world",
+        "motion"
+      ]
     },
     {
       "id": "add-star",
@@ -41,7 +66,12 @@
       "check": "collectible_added",
       "params": {},
       "explanation": "Sparkly! You put a new star into the world with code. Everything in your game can come from your blocks — you are the game maker now.",
-      "toolbox": ["events", "world", "motion", "sound"]
+      "toolbox": [
+        "events",
+        "world",
+        "motion",
+        "sound"
+      ]
     },
     {
       "id": "score-points",
@@ -50,12 +80,19 @@
       "hints": [
         "You just unlocked the Score group — find \"add 1 to the score\".",
         "You need the yellow \"when you collect a star\" block from Events.",
-        "Try: when you collect a star → add 1 to the score. Play test and grab a star to watch the score jump!"
+        "Can your player run yet? Add: when the right arrow key is pressed → move right. Make one for left too!",
+        "Try: when you collect a star → add 1 to the score. Play test, run into a star, and watch the score jump!"
       ],
       "check": "score_on_collect",
       "params": {},
       "explanation": "Cha-ching! Your code now reacts to something happening in the game: collect a star, score goes up. You made a rule, and the game follows it!",
-      "toolbox": ["events", "world", "motion", "sound", "scoring"]
+      "toolbox": [
+        "events",
+        "world",
+        "motion",
+        "sound",
+        "scoring"
+      ]
     },
     {
       "id": "enemy-patrol",
@@ -69,7 +106,14 @@
       "check": "enemy_patrolled",
       "params": {},
       "explanation": "Look at it go! Your code gave the enemy a brain: walk to one end, turn around, walk back. Now your game has a real challenge in it.",
-      "toolbox": ["events", "world", "motion", "sound", "scoring", "enemies"]
+      "toolbox": [
+        "events",
+        "world",
+        "motion",
+        "sound",
+        "scoring",
+        "enemies"
+      ]
     },
     {
       "id": "win-condition",
@@ -83,7 +127,16 @@
       "check": "win_triggered",
       "params": {},
       "explanation": "YOU WIN! And not just this game — you built a complete game: a world, a jump, treasure, points, danger, and a way to win. All with your own code!",
-      "toolbox": ["events", "world", "motion", "sound", "scoring", "enemies", "winning", "logic"]
+      "toolbox": [
+        "events",
+        "world",
+        "motion",
+        "sound",
+        "scoring",
+        "enemies",
+        "winning",
+        "logic"
+      ]
     }
   ]
 }

@@ -7,10 +7,11 @@ import { createEditor, type EditorHandle } from './blocks/editor';
 import { ChallengeEngine } from './challenges/engine';
 import { fetchChallenges } from './challenges/loader';
 import { createChallengePanel, type PanelView } from './ui/challengePanel';
+import { createGameMakerBox } from './ui/gameMakerBox';
 import { createJsView } from './ui/jsView';
 import { createKidNotice } from './ui/kidNotice';
 import { createPlayTestControls, type PlayTestHandle } from './ui/playTest';
-import { createIntake, submitIdea } from './ui/intake';
+import { createIntake, ideaDecision } from './ui/intake';
 import { sendDecision, startInboxPolling } from './bridge/client';
 import {
   createAutosaver,
@@ -20,8 +21,26 @@ import {
   type ProjectRecord,
 } from './storage/projects';
 import { downloadProject, importProjectFromText } from './storage/exportImport';
+import { playBeep } from './game/sounds';
 
 const notice = createKidNotice(document.querySelector<HTMLElement>('#kid-notice-root')!);
+
+// Phaser listens for keys on the window and preventDefaults the ones it
+// captures (space, arrows), which blocks typing them into text fields. Stop
+// keyboard events at the document (bubble phase) whenever the child is typing:
+// the field's own handlers (like Enter-to-send) have already run at the
+// target, but Phaser's window listener never sees the event.
+for (const type of ['keydown', 'keyup'] as const) {
+  document.addEventListener(type, (event) => {
+    const target = event.target as HTMLElement | null;
+    if (
+      target &&
+      (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+    ) {
+      event.stopPropagation();
+    }
+  });
+}
 
 // ---- Inbox dispatch: one poll loop feeds intake waiting, env sync, and chat --
 
@@ -35,21 +54,6 @@ startInboxPolling((message) => {
     notice.celebrate(message.payload.text);
   }
 });
-
-function waitForEnvironmentUpdate(timeoutMs: number): Promise<boolean> {
-  return new Promise((resolve) => {
-    const listener = () => {
-      envUpdateListeners.delete(listener);
-      clearTimeout(timer);
-      resolve(true);
-    };
-    const timer = setTimeout(() => {
-      envUpdateListeners.delete(listener);
-      resolve(false);
-    }, timeoutMs);
-    envUpdateListeners.add(listener);
-  });
-}
 
 // ---- Phaser boot ------------------------------------------------------------
 
@@ -124,15 +128,16 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
       renderPanel();
       autosaver.trigger();
     },
-    onFreeRequest: (text) => {
-      void sendDecision({ type: 'free_request', payload: { request: text } }).then((sent) => {
-        notice.info(
-          sent
-            ? 'Sent to the game maker! Keep playing — your wish is being worked on.'
-            : "The game maker isn't listening right now, but your wish is saved for later!",
-        );
-      });
-    },
+  });
+
+  createGameMakerBox(document.querySelector<HTMLElement>('#game-maker-box')!, (text) => {
+    void sendDecision({ type: 'free_request', payload: { request: text } }).then((sent) => {
+      notice.info(
+        sent
+          ? 'Sent to the game maker! Keep playing — your wish is being worked on.'
+          : "The game maker isn't listening right now, but your wish is saved for later!",
+      );
+    });
   });
 
   function renderPanel(notYet = false): void {
@@ -162,6 +167,8 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
         type: 'challenge_completed',
         payload: { challengeId: current.id, challengeTitle: current.title },
       });
+      notice.celebrate(`Challenge done: ${current.title}`);
+      playBeep('tada');
     }
     renderPanel();
     autosaver.trigger();
@@ -198,6 +205,24 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
       },
       onSessionEnd: (state, endedBy) => {
         void envSync.onPlayTestEnded();
+        if (import.meta.env.DEV) {
+          // Diagnostic breadcrumb: what the completion checks actually saw.
+          const breadcrumb = {
+            endedBy,
+            challengeId: engine.current()?.id ?? 'free-play',
+            check: engine.current()?.check ?? null,
+            completed: engine.currentCompleted(),
+            state,
+            code: editor.getCode(),
+            progress: engine.progress(),
+          };
+          console.info('[kid-game] session ended', breadcrumb);
+          void fetch('/__bridge/debug', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(breadcrumb),
+          }).catch(() => {});
+        }
         if (endedBy !== 'stop') return;
         const result = engine.evaluate(state);
         if (result === 'completed') {
@@ -222,6 +247,7 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
   };
   toolbarButton('↩ Undo', () => editor.undo());
   toolbarButton('↪ Redo', () => editor.redo());
+  toolbarButton('✨ Tidy blocks', () => editor.tidy());
   toolbarButton('🗑 Start over', () => {
     void notice
       .confirm('Clear all your blocks and start this challenge fresh?')
@@ -267,6 +293,39 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
   editor.onChange(() => {
     jsView.update(editor.getCode());
     autosaver.trigger();
+    // Editing blocks mid-play would leave the game running stale code — stop
+    // it (without judging the interrupted session) so Play test always runs
+    // what the child sees.
+    if (playTest?.isPlaying()) {
+      playTest.cancel();
+      notice.info('You changed your blocks, so I stopped the game. Press Play test to try them!');
+    }
+  });
+
+  // Block editor overlay: Blocks button, "e", or Escape to close.
+  const editorOverlay = document.querySelector<HTMLElement>('#editor-overlay')!;
+  function toggleEditor(show = editorOverlay.hidden): void {
+    editorOverlay.hidden = !show;
+    if (show) editor.refresh();
+  }
+  const blocksButton = document.createElement('button');
+  blocksButton.className = 'kid-button';
+  blocksButton.textContent = '🧩 Blocks (E)';
+  blocksButton.onclick = () => toggleEditor();
+  document.querySelector<HTMLElement>('#play-controls')!.prepend(blocksButton);
+  document.addEventListener('keydown', (event) => {
+    const target = event.target as HTMLElement | null;
+    if (
+      target &&
+      (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+    ) {
+      return;
+    }
+    if (event.key === 'e' || event.key === 'E') {
+      toggleEditor();
+    } else if (event.key === 'Escape' && !editorOverlay.hidden) {
+      toggleEditor(false);
+    }
   });
 
   editor.setToolboxCategories(engine.toolboxCategories());
@@ -310,27 +369,12 @@ async function start(): Promise<void> {
   const intake = createIntake(intakeRoot, {
     onSubmit: async (idea) => {
       intake.showBuilding();
-      const timeoutOverride = Number(
-        new URLSearchParams(location.search).get('intakeTimeout') ?? '',
-      );
-      const outcome = await submitIdea(
-        {
-          sendDecision,
-          waitForEnvironmentUpdate,
-          ...(timeoutOverride > 0 ? { timeoutMs: timeoutOverride } : {}),
-        },
-        idea,
-      );
+      await sendDecision(ideaDecision(idea));
       const result = await fetchEnvironment();
       intake.dismiss();
-      if (outcome === 'fallback') {
-        notice.info(
-          "The game maker is still dreaming up your world! Here's a starter world to play in — yours will arrive when it's ready.",
-        );
-      }
-      if (result.source === 'fallback' && outcome === 'harness' && result.kidMessage) {
-        notice.info(result.kidMessage);
-      }
+      notice.info(
+        "The game maker is building your world — it'll pop in here when it's ready. Start playing meanwhile!",
+      );
       await bootWorkbench({
         environment: result.environment,
         idea,

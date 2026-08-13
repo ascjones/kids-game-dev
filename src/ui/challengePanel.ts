@@ -1,6 +1,6 @@
 // The in-game challenge panel (R3, R5): one challenge at a time, staged hints
-// on demand, a distinct "not yet" state, and the free-form "ask the game
-// maker" box (the plan's open question assigns that UI here).
+// on demand, and a distinct "not yet" state. Free-form requests live in the
+// game maker box (gameMakerBox.ts).
 
 export type PanelView =
   | {
@@ -17,7 +17,6 @@ export type PanelView =
 export interface ChallengePanelCallbacks {
   onHintRequest(): void;
   onNextChallenge(): void;
-  onFreeRequest(text: string): void;
 }
 
 export interface ChallengePanelHandle {
@@ -31,29 +30,7 @@ export function createChallengePanel(
   container.classList.add('panel');
 
   const content = document.createElement('div');
-  const requestBox = document.createElement('div');
-  requestBox.style.cssText = 'margin-top:12px;border-top:2px dashed var(--panel-border);padding-top:10px;';
-  requestBox.innerHTML = `
-    <label style="font-weight:bold;">💬 Ask the game maker for anything:</label>
-    <div style="display:flex;gap:6px;margin-top:6px;">
-      <input type="text" placeholder="like: make my player a dragon!" style="flex:1;padding:8px;border:2px solid var(--panel-border);border-radius:8px;font-family:inherit;" />
-      <button class="kid-button">Send</button>
-    </div>
-  `;
-  const requestInput = requestBox.querySelector('input')!;
-  const requestButton = requestBox.querySelector('button')!;
-  const sendRequest = () => {
-    const text = requestInput.value.trim();
-    if (!text) return;
-    callbacks.onFreeRequest(text);
-    requestInput.value = '';
-  };
-  requestButton.onclick = sendRequest;
-  requestInput.onkeydown = (event) => {
-    if (event.key === 'Enter') sendRequest();
-  };
-
-  container.append(content, requestBox);
+  container.append(content);
 
   return {
     render(view: PanelView): void {
@@ -73,7 +50,7 @@ export function createChallengePanel(
       if (view.kind === 'free_play') {
         content.innerHTML = `
           <h2 style="margin:0;">🏆 You finished every challenge!</h2>
-          <p>Your whole toolbox is unlocked. Build anything you can imagine — and if you want new stuff in your world, ask the game maker below!</p>
+          <p>Your whole toolbox is unlocked. Build anything you can imagine — and if you want new stuff in your world, ask the robot game maker in the corner!</p>
         `;
         return;
       }

@@ -37,6 +37,22 @@ export const starterChallenges: ChallengeDef[] = [
     toolbox: ['events', 'world', 'motion'],
   },
   {
+    id: 'learn-to-run',
+    title: 'Make your player run!',
+    prompt:
+      'Your player wants to explore! Make them run to the right and to the left when you press the arrow keys.',
+    hints: [
+      'The Moving group has "move right" and "move left" blocks.',
+      'Running needs keys! Put "move right" inside a "when the right arrow key is pressed" block.',
+      'Make another one for left. Then press Play test and zoom around with the arrow keys!',
+    ],
+    check: 'moved',
+    params: {},
+    explanation:
+      'Zoom! Now YOU steer the player: your code listens to the arrow keys and moves them. Running plus jumping means you can reach anything!',
+    toolbox: ['events', 'world', 'motion'],
+  },
+  {
     id: 'add-star',
     title: 'Add a shiny star!',
     prompt: 'Every adventure needs treasure. Add a new star to your world for the player to grab.',
@@ -59,7 +75,8 @@ export const starterChallenges: ChallengeDef[] = [
     hints: [
       'You just unlocked the Score group — find "add 1 to the score".',
       'You need the yellow "when you collect a star" block from Events.',
-      'Try: when you collect a star → add 1 to the score. Play test and grab a star to watch the score jump!',
+      'Can your player run yet? Add: when the right arrow key is pressed → move right. Make one for left too!',
+      'Try: when you collect a star → add 1 to the score. Play test, run into a star, and watch the score jump!',
     ],
     check: 'score_on_collect',
     params: {},

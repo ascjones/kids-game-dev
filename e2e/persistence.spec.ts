@@ -9,13 +9,14 @@ test('a project survives reload mid-challenge', async ({ page }) => {
   await expect(page.locator('#challenge-panel .explanation')).toBeVisible({ timeout: 20_000 });
   await page.getByRole('button', { name: 'Next challenge →' }).click();
   await expect(page.locator('#challenge-panel')).toContainText('jump');
-  // Let the debounced autosave land before reloading.
+  // Let the debounced autosave land before reloading (toolbar lives in the editor overlay).
+  await page.keyboard.press('e');
   await page.getByRole('button', { name: '💾 Save' }).click();
   await expect(page.locator('.kid-notice').last()).toContainText('Saved');
 
   await page.reload();
   // No intake this time: the saved project resumes on challenge 2 with its blocks.
-  await expect(page.locator('#workbench')).toBeVisible();
+  await expect(page.getByRole('button', { name: '▶ Play test' })).toBeVisible();
   await expect(page.locator('#intake-root')).toHaveCount(0);
   await expect(page.locator('#challenge-panel')).toContainText('jump');
   await expect(page.locator('#js-view')).toContainText('api.spawnPlatform');
@@ -25,7 +26,8 @@ test('export then import round-trips through a single file', async ({ page }) =>
   await bootToWorkbench(page);
   await playProgram(page, PROGRAMS.addPlatform);
   await expect(page.locator('#challenge-panel .explanation')).toBeVisible({ timeout: 20_000 });
-  // Make sure the current project is in IndexedDB so import asks before replacing.
+  // Toolbar lives in the editor overlay; save so import asks before replacing.
+  await page.keyboard.press('e');
   await page.getByRole('button', { name: '💾 Save' }).click();
   await expect(page.locator('.kid-notice').last()).toContainText('Saved');
 
@@ -56,6 +58,7 @@ test('a corrupt import is rejected and the project is untouched', async ({ page 
   const fs = await import('node:fs');
   fs.writeFileSync(badFile, '{ "definitely": "not a project"');
 
+  await page.keyboard.press('e');
   const chooserPromise = page.waitForEvent('filechooser');
   await page.getByRole('button', { name: '📥 Load from a file' }).click();
   await (await chooserPromise).setFiles(badFile);

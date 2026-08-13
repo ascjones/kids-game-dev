@@ -61,11 +61,12 @@ describe('progression and unlocks', () => {
     expect(engine.current()?.id).toBe('add-platform');
   });
 
-  it('completing all six ends in free play with every category', () => {
+  it('completing every challenge ends in free play with every category', () => {
     const engine = makeEngine();
     const satisfyAll: SessionState = {
       ...baseline,
       platformCount: 4,
+      moved: true,
       jumped: true,
       collectiblesSpawned: 1,
       scoreIncreasedOnCollect: true,
@@ -73,7 +74,7 @@ describe('progression and unlocks', () => {
       enemyPatrolled: true,
       winTriggered: true,
     };
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < starterChallenges.length; i++) {
       expect(engine.evaluate(satisfyAll)).toBe('completed');
       engine.advance();
     }
@@ -81,6 +82,18 @@ describe('progression and unlocks', () => {
     expect(engine.current()).toBeNull();
     expect(engine.toolboxCategories()).toContain('timing');
     expect(engine.toolboxCategories()).toContain('variables');
+  });
+
+  it('resumes at the first open challenge when content was inserted or reordered', () => {
+    // A save from before 'learn-to-run' existed: three done, index pointed at
+    // what used to be challenge 4. The completed set is the durable truth.
+    const legacyProgress = {
+      completedIds: ['add-platform', 'make-jump', 'add-star'],
+      currentIndex: 3,
+      hintStages: {},
+    };
+    const engine = new ChallengeEngine(starterChallenges, legacyProgress);
+    expect(engine.current()?.id).toBe('learn-to-run');
   });
 
   it('round-trips progress through serialization', () => {

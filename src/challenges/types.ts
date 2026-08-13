@@ -7,6 +7,7 @@ import { ALL_CATEGORY_IDS, type CategoryId } from '../blocks/toolbox';
 
 export const CHECK_NAMES = [
   'platform_added',
+  'moved',
   'jumped',
   'collectible_added',
   'score_on_collect',
@@ -43,6 +44,7 @@ export type ChallengeDef = z.infer<typeof challengeSchema>;
 export interface SessionState {
   initialPlatformCount: number;
   platformCount: number;
+  moved: boolean;
   jumped: boolean;
   collectiblesSpawned: number;
   collectedCount: number;
@@ -56,6 +58,7 @@ export interface SessionState {
 export const BASELINE_SESSION: SessionState = {
   initialPlatformCount: 0,
   platformCount: 0,
+  moved: false,
   jumped: false,
   collectiblesSpawned: 0,
   collectedCount: 0,

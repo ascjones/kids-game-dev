@@ -8,7 +8,7 @@ export function createJsView(container: HTMLElement): JsViewHandle {
   container.classList.add('panel');
   container.innerHTML = `
     <strong>The JavaScript your blocks make:</strong>
-    <pre class="js-view-code" style="margin:8px 0 0;max-height:220px;overflow:auto;background:#2b2440;color:#a8ffbf;padding:10px;border-radius:8px;font-size:13px;"><code></code></pre>
+    <pre class="js-view-code" style="margin:8px 0 0;flex:1;min-height:0;overflow:auto;background:#2b2440;color:#a8ffbf;padding:10px;border-radius:8px;font-size:14px;line-height:1.5;"><code></code></pre>
   `;
   const codeElement = container.querySelector('code')!;
   return {
