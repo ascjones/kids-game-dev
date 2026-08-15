@@ -1,6 +1,7 @@
-// The child's line to the harness (free-form creative requests): a little
-// wizard console — fixed-width font, dark screen, blinking cursor, and a
-// status line showing spell progress.
+// The child's line to the harness (free-form creative requests): the Game
+// Wizard, sitting at the bottom of the bench. The wizard's aura is the app's
+// light source — it breathes slowly while idle and quickens while a wish is
+// being cast.
 
 export interface GameMakerBoxHandle {
   /** A wish was sent and the wizard is working on it. */
@@ -15,22 +16,21 @@ export function createGameMakerBox(
 ): GameMakerBoxHandle {
   container.classList.add('panel');
   container.innerHTML = `
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-      <span class="robot" style="font-size:2.4rem;line-height:1;">🧙</span>
-      <div style="flex:1;">
-        <div style="font-size:1.2rem;font-weight:bold;letter-spacing:1px;">THE GAME WIZARD</div>
-        <div style="font-size:0.95rem;opacity:0.8;">&gt; wish for anything in your game<span class="gm-cursor">▊</span></div>
+    <div class="gm-head">
+      <span class="wizard-mark robot">🧙</span>
+      <div class="gm-head-text">
+        <div class="gm-name">The Game Wizard</div>
+        <div class="gm-tag">&gt; wish for anything<span class="gm-cursor">▊</span></div>
       </div>
-      <button class="kid-button secondary gm-collapse" title="Hide the wizard" style="padding:2px 10px;">✕</button>
+      <button class="kid-button secondary panel-close gm-collapse" title="Hide the wizard">✕</button>
     </div>
-    <button class="kid-button gm-chip" hidden style="font-size:1.4rem;padding:8px 14px;">🧙</button>
-    <div class="gm-status" hidden style="margin-bottom:8px;padding:8px 10px;border:2px dashed var(--console-border);border-radius:8px;font-size:0.95rem;"></div>
-    <textarea rows="6" placeholder="like: make it rain tacos!"
-      style="width:100%;resize:vertical;padding:12px;border:2px solid var(--console-border);border-radius:10px;background:var(--console-bg-deep);color:#8ef0a9;font-family:inherit;font-size:1.15rem;line-height:1.5;"></textarea>
-    <button class="kid-button" style="margin-top:8px;width:100%;font-size:1.05rem;font-family:inherit;">▶ SEND</button>
+    <button class="kid-button panel-chip gm-chip" hidden>🧙</button>
+    <div class="gm-status" hidden></div>
+    <textarea class="field" rows="3" placeholder="like: make it rain tacos!"></textarea>
+    <button class="kid-button gm-send">Send</button>
   `;
   const input = container.querySelector('textarea')!;
-  const button = container.querySelector<HTMLButtonElement>('button:not(.gm-collapse):not(.gm-chip)')!;
+  const button = container.querySelector<HTMLButtonElement>('.gm-send')!;
   const collapseButton = container.querySelector<HTMLButtonElement>('.gm-collapse')!;
   const chip = container.querySelector<HTMLButtonElement>('.gm-chip')!;
   const setCollapsed = (collapsed: boolean) => {
@@ -70,14 +70,16 @@ export function createGameMakerBox(
     setBusy(wish: string): void {
       busy = true;
       if (doneTimer) clearTimeout(doneTimer);
+      container.classList.add('casting');
       status.dataset.active = '1';
       status.hidden = container.classList.contains('collapsed');
-      status.innerHTML = `🪄 casting: "${escapeHtml(wish)}"<span class="gm-cursor">▊</span>`;
+      status.innerHTML = `Casting “${escapeHtml(wish)}”<span class="gm-cursor">▊</span>`;
     },
     wishAnswered(): void {
       if (!busy) return;
       busy = false;
-      status.innerHTML = '✅ spell finished — look at your game!';
+      container.classList.remove('casting');
+      status.textContent = 'Spell finished — look at your game!';
       if (doneTimer) clearTimeout(doneTimer);
       doneTimer = setTimeout(() => {
         status.dataset.active = '0';

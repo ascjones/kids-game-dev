@@ -7,8 +7,11 @@ export interface JsViewHandle {
 export function createJsView(container: HTMLElement): JsViewHandle {
   container.classList.add('panel');
   container.innerHTML = `
-    <strong>The JavaScript your blocks make:</strong>
-    <pre class="js-view-code" style="margin:8px 0 0;flex:1;min-height:0;overflow:auto;background:#2b2440;color:#a8ffbf;padding:10px;border-radius:8px;font-size:14px;line-height:1.5;"><code></code></pre>
+    <div class="jsv-head">
+      <span class="plaque">&gt; your blocks as code</span>
+      <span class="jsv-note">this is real JavaScript</span>
+    </div>
+    <pre class="js-view-code"><code></code></pre>
   `;
   const codeElement = container.querySelector('code')!;
   return {

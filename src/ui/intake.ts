@@ -49,23 +49,30 @@ export function createIntake(container: HTMLElement, callbacks: IntakeCallbacks)
   container.innerHTML = `
     <div class="intake-frame">
       <div class="intake-header">
-        <span class="intake-wizard">🧙</span>
+        <span class="wizard-mark intake-wizard">🧙</span>
         <div>
-          <div class="intake-title">THE GAME WIZARD</div>
+          <div class="intake-title">The Game Wizard</div>
           <div class="intake-sub">&gt; tell me your idea and I will conjure your game<span class="gm-cursor">▊</span></div>
         </div>
       </div>
-      <h1 class="intake-h1">LET'S MAKE <span class="intake-glow">YOUR</span> GAME</h1>
+      <h1 class="intake-h1">Let's make <span class="intake-glow">YOUR</span> game</h1>
       <div class="saved-games" hidden>
-        <p class="intake-label">&gt; your saved games:</p>
+        <p class="intake-label">&gt; games you saved</p>
         <div class="saved-games-grid"></div>
-        <p class="intake-label" style="margin-top:18px;">&gt; or start a brand new one:</p>
       </div>
-      <textarea rows="4" placeholder="like: a ninja cat who collects magic fish in a candy world"></textarea>
-      <p class="intake-label">&gt; pick a game style:</p>
-      <div class="genres"></div>
-      <button class="kid-button intake-build">▶ BUILD MY GAME</button>
-      <div class="building" hidden></div>
+      <div class="intake-scroll panel">
+        <p class="intake-label">&gt; what happens in your game?</p>
+        <textarea class="field" rows="4" placeholder="like: a ninja cat who collects magic fish in a candy world"></textarea>
+      </div>
+      <div>
+        <p class="intake-label">&gt; kind of game</p>
+        <div class="genres"></div>
+        <p class="genres-note">The wizard is still learning the other kinds — they'll unlock soon.</p>
+      </div>
+      <div>
+        <button class="kid-button hero intake-build">▶ Build my game</button>
+        <div class="building" hidden></div>
+      </div>
     </div>
   `;
 
@@ -86,9 +93,9 @@ export function createIntake(container: HTMLElement, callbacks: IntakeCallbacks)
       card.dataset.saveId = save.id;
       const when = save.savedAt ? new Date(save.savedAt).toLocaleDateString() : '';
       card.innerHTML = `
-        <div class="saved-game-title">💾 ${save.title}</div>
+        <div class="saved-game-title">${save.title}</div>
         <div class="saved-game-idea">${save.idea || 'a mystery game'}</div>
-        <div class="saved-game-meta">⭐ ${save.completedChallenges} challenges done${when ? ` · ${when}` : ''}</div>
+        <div class="saved-game-meta">${save.completedChallenges} challenges done${when ? ` · ${when}` : ''}</div>
       `;
       card.onclick = () => callbacks.onLoadSave?.(save.id);
       savedGrid.appendChild(card);
@@ -102,7 +109,8 @@ export function createIntake(container: HTMLElement, callbacks: IntakeCallbacks)
     card.className = genre.locked ? 'genre-card' : 'genre-card selected';
     card.dataset.genre = genre.id;
     card.disabled = genre.locked;
-    card.innerHTML = `<div class="genre-emoji">${genre.emoji}</div>${genre.label}${genre.locked ? '<div class="genre-lock">🔒 soon!</div>' : ''}`;
+    card.innerHTML = `<span class="genre-emoji">${genre.emoji}</span><span class="genre-name">${genre.label}</span>`;
+    if (genre.locked) card.title = 'Not ready yet';
     card.onclick = () => {
       if (genre.locked) return;
       selectedGenre = genre.id;
@@ -127,8 +135,9 @@ export function createIntake(container: HTMLElement, callbacks: IntakeCallbacks)
     showBuilding(): void {
       buildButton.disabled = true;
       textarea.disabled = true;
+      container.querySelector('.intake-frame')?.classList.add('casting');
       building.hidden = false;
-      building.innerHTML = '🪄 <strong>casting the world-building spell…</strong><span class="gm-cursor">▊</span>';
+      building.innerHTML = 'Casting the world-building spell<span class="gm-cursor">▊</span>';
     },
     dismiss(): void {
       container.remove();

@@ -13,26 +13,35 @@ const INFO_AUTOHIDE_MS = 9000;
 
 export function createKidNotice(container: HTMLElement): KidNotice {
   container.classList.add('kid-notice-root');
-  container.style.cssText =
-    'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:100;display:flex;flex-direction:column;gap:8px;max-width:560px;width:90%;';
 
-  function card(kind: 'info' | 'celebrate'): HTMLDivElement {
+  function card(kind: 'info' | 'celebrate'): {
+    element: HTMLDivElement;
+    body: HTMLDivElement;
+  } {
     const element = document.createElement('div');
-    element.className = 'panel kid-notice';
-    element.style.cssText = `border-color:${kind === 'celebrate' ? 'var(--success)' : 'var(--warn)'};box-shadow:0 4px 16px rgba(43,36,64,.2);font-size:1.05rem;`;
+    element.className = `panel kid-notice ${kind === 'celebrate' ? 'celebrate' : ''}`;
+    const icon = document.createElement('span');
+    icon.className = 'cp-star';
+    icon.textContent = kind === 'celebrate' ? '🎉' : '💡';
+    const body = document.createElement('div');
+    body.className = 'kid-notice-body';
+    element.append(icon, body);
     container.appendChild(element);
-    return element;
+    return { element, body };
   }
 
   function show(kind: 'info' | 'celebrate', message: string): void {
-    const element = card(kind);
-    element.textContent = `${kind === 'celebrate' ? '🎉 ' : '💡 '}${message}`;
+    const { element, body } = card(kind);
+    const text = document.createElement('p');
+    text.className = 'kid-notice-text';
+    text.textContent = message;
     const close = document.createElement('button');
+    close.className = 'kid-button secondary panel-close';
     close.textContent = '✕';
-    close.className = 'kid-button secondary';
-    close.style.cssText = 'float:right;padding:2px 8px;margin-left:8px;';
+    close.title = 'Close';
     close.onclick = () => element.remove();
-    element.prepend(close);
+    body.appendChild(text);
+    element.appendChild(close);
     setTimeout(() => element.remove(), INFO_AUTOHIDE_MS);
   }
 
@@ -41,17 +50,18 @@ export function createKidNotice(container: HTMLElement): KidNotice {
     celebrate: (message) => show('celebrate', message),
     confirm: (message, yesLabel = 'Yes, do it', noLabel = 'No, keep mine') =>
       new Promise((resolve) => {
-        const element = card('info');
+        const { element, body } = card('info');
         const text = document.createElement('p');
-        text.textContent = `🤔 ${message}`;
-        text.style.margin = '0 0 10px';
+        text.className = 'kid-notice-text';
+        text.textContent = message;
+        const actions = document.createElement('div');
+        actions.className = 'kid-notice-actions';
         const yes = document.createElement('button');
         yes.className = 'kid-button';
         yes.textContent = yesLabel;
         const no = document.createElement('button');
         no.className = 'kid-button secondary';
         no.textContent = noLabel;
-        no.style.marginLeft = '8px';
         yes.onclick = () => {
           element.remove();
           resolve(true);
@@ -60,7 +70,8 @@ export function createKidNotice(container: HTMLElement): KidNotice {
           element.remove();
           resolve(false);
         };
-        element.append(text, yes, no);
+        actions.append(yes, no);
+        body.append(text, actions);
       }),
   };
 }

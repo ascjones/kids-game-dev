@@ -86,15 +86,15 @@ export function createPlayTestControls(
   container.classList.add('panel');
 
   const playButton = document.createElement('button');
-  playButton.className = 'kid-button';
+  playButton.className = 'kid-button hero dock-play';
   playButton.textContent = '▶ Play test';
   const stopButton = document.createElement('button');
-  stopButton.className = 'kid-button secondary';
+  stopButton.className = 'kid-button secondary dock-stop';
   stopButton.textContent = '⏹ Stop';
   stopButton.disabled = true;
   const tip = document.createElement('span');
   tip.className = 'dock-tip';
-  tip.textContent = 'arrow keys to play!';
+  tip.textContent = 'arrow keys to play';
   container.append(playButton, stopButton, tip);
 
   let runtime: ApiRuntime | null = null;

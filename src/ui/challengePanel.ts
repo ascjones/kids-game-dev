@@ -10,8 +10,11 @@ export type PanelView =
       hints: string[];
       hasMoreHints: boolean;
       notYet: boolean;
+      /** Position in the six-challenge sequence, 1-based, when known. */
+      step?: number;
+      total?: number;
     }
-  | { kind: 'completed'; title: string; explanation: string }
+  | { kind: 'completed'; title: string; explanation: string; step?: number; total?: number }
   | { kind: 'free_play' };
 
 export interface ChallengePanelCallbacks {
@@ -25,6 +28,25 @@ export interface ChallengePanelHandle {
   expand(): void;
 }
 
+/**
+ * The challenges are a fixed sequence, so where the child is in it is real
+ * information — one filled pip per finished challenge, an open one for the
+ * rest.
+ */
+function stepMarkup(step?: number, total?: number): string {
+  if (!step || !total) return '';
+  const pips = Array.from({ length: total }, (_, index) => {
+    const state = index < step - 1 ? 'done' : index === step - 1 ? 'now' : '';
+    return `<span class="cp-pip ${state}"></span>`;
+  }).join('');
+  return `
+    <div class="cp-step">
+      <span class="plaque">Spell ${step} of ${total}</span>
+      <span class="cp-pips">${pips}</span>
+    </div>
+  `;
+}
+
 export function createChallengePanel(
   container: HTMLElement,
   callbacks: ChallengePanelCallbacks,
@@ -36,12 +58,11 @@ export function createChallengePanel(
   // Dismissible: collapses to a small chip instead of disappearing, and
   // reopens by itself when a challenge completes so success is never missed.
   const collapseButton = document.createElement('button');
-  collapseButton.className = 'kid-button secondary';
+  collapseButton.className = 'kid-button secondary panel-close';
   collapseButton.textContent = '✕';
   collapseButton.title = 'Hide the challenge';
-  collapseButton.style.cssText = 'float:right;padding:2px 10px;margin-left:8px;';
   const chip = document.createElement('button');
-  chip.className = 'kid-button';
+  chip.className = 'kid-button panel-chip';
   chip.textContent = '🎯 Challenge';
   chip.hidden = true;
   const setCollapsed = (collapsed: boolean) => {
@@ -59,11 +80,18 @@ export function createChallengePanel(
     expand: () => setCollapsed(false),
     render(view: PanelView): void {
       if (view.kind === 'completed') setCollapsed(false);
+      container.classList.toggle('cp-done', view.kind !== 'challenge');
       content.innerHTML = '';
       if (view.kind === 'completed') {
         content.innerHTML = `
-          <h2 style="margin:0;">⭐ ${view.title}</h2>
-          <p class="explanation" style="font-size:1.1rem;">${view.explanation}</p>
+          <div class="cp-head">
+            <span class="cp-star">⭐</span>
+            <div class="cp-head-text">
+              ${stepMarkup(view.step, view.total)}
+              <h2 class="cp-title">${view.title}</h2>
+            </div>
+          </div>
+          <p class="explanation">${view.explanation}</p>
         `;
         const next = document.createElement('button');
         next.className = 'kid-button';
@@ -74,21 +102,32 @@ export function createChallengePanel(
       }
       if (view.kind === 'free_play') {
         content.innerHTML = `
-          <h2 style="margin:0;">🏆 You finished every challenge!</h2>
-          <p>Your whole toolbox is unlocked. Build anything you can imagine — and if you want new stuff in your world, ask the Game Wizard in the corner!</p>
+          <div class="cp-head">
+            <span class="cp-star">🏆</span>
+            <div class="cp-head-text">
+              <span class="plaque">All spells learned</span>
+              <h2 class="cp-title">You finished every challenge!</h2>
+            </div>
+          </div>
+          <p class="explanation">Every block is unlocked. Build anything you can imagine — and ask the Game Wizard below for new things to put in your world.</p>
         `;
         return;
       }
       const notYetBanner = view.notYet
-        ? `<p class="not-yet" style="background:rgba(124,92,255,0.3);border-radius:8px;padding:8px;">🧐 Not yet! Your blocks ran fine, but the challenge isn't done. ${
-            view.hasMoreHints ? 'Try the hint button below!' : 'Look at the hints again — you are close!'
+        ? `<p class="not-yet">Not yet! Your blocks ran fine, but the challenge isn't finished. ${
+            view.hasMoreHints ? 'Ask for a hint below.' : 'Read the hints again — you are close.'
           }</p>`
         : '';
       content.innerHTML = `
-        <h2 style="margin:0;">🎯 ${view.title}</h2>
-        <p style="font-size:1.05rem;">${view.prompt}</p>
+        <div class="cp-head">
+          <div class="cp-head-text">
+            ${stepMarkup(view.step, view.total)}
+            <h2 class="cp-title">${view.title}</h2>
+          </div>
+        </div>
+        <p class="cp-prompt">${view.prompt}</p>
         ${notYetBanner}
-        <ul class="hints" style="margin:6px 0;">${view.hints.map((h) => `<li>💡 ${h}</li>`).join('')}</ul>
+        <ul class="hints">${view.hints.map((hint) => `<li>${hint}</li>`).join('')}</ul>
       `;
       if (view.hasMoreHints) {
         const hint = document.createElement('button');

@@ -20,20 +20,25 @@ export interface EditorHandle {
   tidy(): void;
 }
 
+// The workspace is the console's main screen. Colours follow src/style.css.
 const kidTheme = Blockly.Theme.defineTheme('kid-console', {
   name: 'kid-console',
   base: Blockly.Themes.Zelos,
   componentStyles: {
-    workspaceBackgroundColour: '#0e0b1c',
-    toolboxBackgroundColour: '#17132a',
-    toolboxForegroundColour: '#c9f7d8',
-    flyoutBackgroundColour: '#241d3f',
-    flyoutForegroundColour: '#c9f7d8',
-    scrollbarColour: '#3a2f63',
-    insertionMarkerColour: '#8ef0a9',
+    workspaceBackgroundColour: '#08060f',
+    toolboxBackgroundColour: '#130f21',
+    toolboxForegroundColour: '#e2ddf5',
+    flyoutBackgroundColour: '#0e0b1a',
+    flyoutForegroundColour: '#e2ddf5',
+    flyoutOpacity: 1,
+    scrollbarColour: '#33285e',
+    insertionMarkerColour: '#7cf5a6',
+    insertionMarkerOpacity: 0.7,
+    cursorColour: '#7cf5a6',
   },
   fontStyle: {
-    family: 'ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace',
+    family: '"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace',
+    weight: '700',
     size: 12,
   },
 });
@@ -46,6 +51,8 @@ export function createEditor(container: HTMLElement): EditorHandle {
     renderer: 'zelos',
     theme: kidTheme,
     toolbox: buildToolbox(['events']),
+    // A faint grid gives the empty workspace some ground to drop blocks onto.
+    grid: { spacing: 28, length: 3, colour: '#1e1838', snap: false },
     zoom: { controls: true, wheel: true, startScale: 0.9 },
     trashcan: true,
     move: { scrollbars: true, drag: true, wheel: true },

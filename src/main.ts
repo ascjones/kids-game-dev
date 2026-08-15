@@ -157,11 +157,21 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
 
   function renderPanel(notYet = false): void {
     const current = engine.current();
+    // The challenges are a fixed sequence, so the child gets to see where in
+    // it they are.
+    const total = challengesResult.challenges.length;
+    const step = engine.progress().currentIndex + 1;
     let view: PanelView;
     if (!current) {
       view = { kind: 'free_play' };
     } else if (engine.currentCompleted()) {
-      view = { kind: 'completed', title: current.title, explanation: current.explanation };
+      view = {
+        kind: 'completed',
+        title: current.title,
+        explanation: current.explanation,
+        step,
+        total,
+      };
     } else {
       view = {
         kind: 'challenge',
@@ -170,6 +180,8 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
         hints: engine.revealedHints(),
         hasMoreHints: engine.hasMoreHints(),
         notYet,
+        step,
+        total,
       };
     }
     panel.render(view);
@@ -251,11 +263,9 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
 
   // Editor toolbar: undo/reset/save (R8) and the export/import round trip (R14).
   const toolbar = document.querySelector<HTMLElement>('#editor-toolbar')!;
-  toolbar.classList.add('panel');
-  toolbar.style.cssText += 'display:flex;gap:8px;flex-wrap:wrap;';
-  const toolbarButton = (label: string, onClick: () => void): void => {
+  const toolbarButton = (label: string, onClick: () => void, variant = 'secondary'): void => {
     const button = document.createElement('button');
-    button.className = 'kid-button secondary';
+    button.className = `kid-button ${variant}`;
     button.textContent = label;
     button.onclick = onClick;
     toolbar.appendChild(button);
@@ -263,13 +273,6 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
   toolbarButton('↩ Undo', () => editor.undo());
   toolbarButton('↪ Redo', () => editor.redo());
   toolbarButton('✨ Tidy blocks', () => editor.tidy());
-  toolbarButton('🗑 Start over', () => {
-    void notice
-      .confirm('Clear all your blocks and start this challenge fresh?')
-      .then((yes) => {
-        if (yes) editor.resetWorkspace();
-      });
-  });
   toolbarButton('💾 Save', () => {
     autosaver.trigger();
     void autosaver.flush().then(() => notice.celebrate('Saved! Your game is safe.'));
@@ -305,6 +308,21 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
   };
   toolbar.appendChild(importInput);
   toolbarButton('📥 Load from a file', () => importInput.click());
+  // Everything past here throws work away, so it sits apart from the rest.
+  const toolbarSpacer = document.createElement('span');
+  toolbarSpacer.className = 'toolbar-spacer';
+  toolbar.appendChild(toolbarSpacer);
+  toolbarButton(
+    '🗑 Start over',
+    () => {
+      void notice
+        .confirm('Clear all your blocks and start this challenge fresh?')
+        .then((yes) => {
+          if (yes) editor.resetWorkspace();
+        });
+    },
+    'secondary danger',
+  );
 
   editor.onChange(() => {
     jsView.update(editor.getCode());
@@ -335,7 +353,7 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
     }
   }
   const blocksButton = document.createElement('button');
-  blocksButton.className = 'kid-button';
+  blocksButton.className = 'kid-button magic dock-blocks';
   blocksButton.textContent = '🧩 Blocks (E)';
   blocksButton.onclick = () => toggleEditor();
   const playControlsBar = document.querySelector<HTMLElement>('#play-controls')!;
@@ -344,18 +362,19 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
   // Minimize the dock to a single button so nothing blocks the view mid-game.
   const dockToggle = document.createElement('button');
   dockToggle.className = 'kid-button secondary dock-toggle';
-  dockToggle.textContent = '▲ hide';
+  dockToggle.textContent = '▲';
+  dockToggle.title = 'Hide the controls';
   dockToggle.onclick = () => {
     const collapsed = playControlsBar.classList.toggle('collapsed');
-    dockToggle.textContent = collapsed ? '🎮' : '▲ hide';
+    dockToggle.textContent = collapsed ? '🎮' : '▲';
     dockToggle.title = collapsed ? 'Show the controls' : 'Hide the controls';
   };
   playControlsBar.prepend(dockToggle);
 
   // Quit to intake for a brand new game — with a save reminder first.
   const newGameButton = document.createElement('button');
-  newGameButton.className = 'kid-button secondary';
-  newGameButton.textContent = '🆕 New game';
+  newGameButton.className = 'kid-button secondary dock-new';
+  newGameButton.textContent = 'New game';
   newGameButton.onclick = async () => {
     playTest?.stop();
     const saveFirst = await notice.confirm(
