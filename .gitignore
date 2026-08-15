@@ -9,3 +9,4 @@ bridge/outbox/processed/
 bridge/inbox/*.json
 bridge/inbox/processed/
 bridge/debug/
+saves/

@@ -13,6 +13,14 @@ import { decisionInputSchema, inboxMessageSchema, type InboxMessage } from './me
 export interface BridgeDirs {
   outbox: string;
   inbox: string;
+  /** Server-side game library: one JSON file per project. */
+  saves: string;
+}
+
+/** Filenames come only from this: strip anything that could escape the dir. */
+function sanitizeId(id: string): string | null {
+  const clean = id.replace(/[^a-zA-Z0-9_-]/g, '');
+  return clean.length > 0 && clean.length <= 64 ? clean : null;
 }
 
 export type WriteResult = { ok: true; file: string } | { ok: false; error: string };
@@ -109,6 +117,72 @@ export function handleBridgeRequest(
   if (method === 'GET' && url.startsWith('/inbox')) {
     return { status: 200, body: { ok: true, messages: readInbox(dirs) } };
   }
+  if (method === 'POST' && url.startsWith('/saves')) {
+    let record: unknown;
+    try {
+      record = JSON.parse(rawBody);
+    } catch {
+      return { status: 400, body: { ok: false, error: 'body is not JSON' } };
+    }
+    const id =
+      typeof record === 'object' && record !== null
+        ? sanitizeId(String((record as { id?: unknown }).id ?? ''))
+        : null;
+    if (!id) {
+      return { status: 400, body: { ok: false, error: 'save needs a valid id' } };
+    }
+    fs.mkdirSync(dirs.saves, { recursive: true });
+    const finalPath = path.join(dirs.saves, `${id}.json`);
+    const tempPath = path.join(dirs.saves, `.tmp-${id}.json`);
+    fs.writeFileSync(tempPath, JSON.stringify(record, null, 2));
+    fs.renameSync(tempPath, finalPath);
+    return { status: 200, body: { ok: true, id } };
+  }
+  if (method === 'GET' && /^\/saves\/[^/]+$/.test(url)) {
+    const id = sanitizeId(url.slice('/saves/'.length));
+    const filePath = id ? path.join(dirs.saves, `${id}.json`) : null;
+    if (!filePath || !fs.existsSync(filePath)) {
+      return { status: 404, body: { ok: false, error: 'no such save' } };
+    }
+    try {
+      return {
+        status: 200,
+        body: { ok: true, record: JSON.parse(fs.readFileSync(filePath, 'utf8')) },
+      };
+    } catch {
+      return { status: 500, body: { ok: false, error: 'save file unreadable' } };
+    }
+  }
+  if (method === 'GET' && url.startsWith('/saves')) {
+    if (!fs.existsSync(dirs.saves)) return { status: 200, body: { ok: true, saves: [] } };
+    const saves = fs
+      .readdirSync(dirs.saves)
+      .filter((name) => name.endsWith('.json') && !name.startsWith('.'))
+      .flatMap((name) => {
+        try {
+          const record = JSON.parse(fs.readFileSync(path.join(dirs.saves, name), 'utf8')) as {
+            id?: string;
+            idea?: string;
+            savedAt?: string;
+            environment?: { title?: string };
+            challengeProgress?: { completedIds?: string[] };
+          };
+          return [
+            {
+              id: record.id ?? name.replace(/\.json$/, ''),
+              idea: record.idea ?? '',
+              title: record.environment?.title ?? 'My Game',
+              savedAt: record.savedAt ?? '',
+              completedChallenges: record.challengeProgress?.completedIds?.length ?? 0,
+            },
+          ];
+        } catch {
+          return [];
+        }
+      })
+      .sort((a, b) => (a.savedAt < b.savedAt ? 1 : -1));
+    return { status: 200, body: { ok: true, saves } };
+  }
   if (method === 'POST' && url.startsWith('/debug')) {
     // Dev diagnostics channel (not part of the harness message contract):
     // the app drops session breadcrumbs here so a harness session can debug
@@ -137,6 +211,7 @@ export function bridgePlugin(): Plugin {
       const dirs: BridgeDirs = {
         outbox: path.join(root, 'bridge', 'outbox'),
         inbox: path.join(root, 'bridge', 'inbox'),
+        saves: path.join(root, 'saves'),
       };
       fs.mkdirSync(dirs.outbox, { recursive: true });
       fs.mkdirSync(dirs.inbox, { recursive: true });

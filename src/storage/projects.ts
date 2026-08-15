@@ -5,6 +5,8 @@ import { getDb, PROJECT_STORE } from './db';
 
 export const projectRecordSchema = z.object({
   version: z.literal(1),
+  /** Stable per-game id; names the file in the server-side library. */
+  id: z.string().default(''),
   savedAt: z.string(),
   idea: z.string().default(''),
   workspace: z.record(z.string(), z.unknown()),
@@ -48,16 +50,22 @@ export interface Autosaver {
 
 const AUTOSAVE_DEBOUNCE_MS = 800;
 
-/** Debounced autosave (U9): rapid edits collapse into one write. */
+/**
+ * Debounced autosave (U9): rapid edits collapse into one write. Persists to
+ * IndexedDB and, by default, mirrors to the server-side library.
+ */
 export function createAutosaver(
   collect: () => ProjectRecord,
   debounceMs = AUTOSAVE_DEBOUNCE_MS,
+  mirror: (record: ProjectRecord) => Promise<unknown> = async () => {},
 ): Autosaver {
   let timer: ReturnType<typeof setTimeout> | null = null;
 
   const write = async () => {
     timer = null;
-    await saveProject(collect());
+    const record = collect();
+    await saveProject(record);
+    void mirror(record);
   };
 
   return {

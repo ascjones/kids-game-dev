@@ -15,6 +15,7 @@ import { starterEnvironment } from '../game/starterEnvironment';
 function makeRecord(overrides: Partial<ProjectRecord> = {}): ProjectRecord {
   return {
     version: 1,
+    id: 'test-game',
     savedAt: '2026-08-12T10:00:00.000Z',
     idea: 'ninja cat',
     workspace: { blocks: { languageVersion: 0, blocks: [{ type: 'event_start' }] } },

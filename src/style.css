@@ -215,9 +215,166 @@ body {
   font-size: 1.05rem;
 }
 
-#intake-root {
-  position: relative;
+/* First-run intake: a full-page wizard terminal. */
+#intake-root:not(:empty) {
+  position: fixed;
+  inset: 0;
   z-index: 30;
+  overflow-y: auto;
+  background:
+    radial-gradient(1200px 600px at 70% -10%, rgba(124, 92, 255, 0.25), transparent),
+    #0e0b1c;
+  color: var(--console-text);
+  font-family: var(--console-font);
+}
+
+.intake-frame {
+  width: min(1100px, 94vw);
+  margin: 6vh auto;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.intake-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.intake-wizard {
+  font-size: 3.6rem;
+  line-height: 1;
+}
+
+.intake-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  letter-spacing: 3px;
+}
+
+.intake-sub {
+  font-size: 1.15rem;
+  opacity: 0.8;
+}
+
+.intake-h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  letter-spacing: 4px;
+}
+
+.intake-glow {
+  color: #8ef0a9;
+  text-shadow: 0 0 18px rgba(142, 240, 169, 0.6);
+}
+
+#intake-root textarea {
+  width: 100%;
+  padding: 18px;
+  border: 3px solid var(--console-border);
+  border-radius: 14px;
+  background: rgba(14, 11, 28, 0.9);
+  color: #8ef0a9;
+  font-family: inherit;
+  font-size: 1.5rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+#intake-root textarea::placeholder {
+  color: #5f8f6e;
+}
+
+.intake-label {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.genres {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.genre-card {
+  padding: 20px 12px;
+  border-radius: 14px;
+  border: 3px solid var(--console-border);
+  background: rgba(36, 29, 63, 0.7);
+  color: var(--console-text);
+  font-family: inherit;
+  font-size: 1.15rem;
+  cursor: pointer;
+}
+
+.genre-card .genre-emoji {
+  font-size: 2.6rem;
+  margin-bottom: 6px;
+}
+
+.genre-card .genre-lock {
+  font-size: 0.95rem;
+  opacity: 0.7;
+}
+
+.genre-card:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.genre-card.selected {
+  border-color: #8ef0a9;
+  box-shadow: 0 0 16px rgba(142, 240, 169, 0.35);
+}
+
+.intake-build {
+  font-size: 1.5rem;
+  padding: 18px;
+  font-family: inherit;
+  letter-spacing: 2px;
+}
+
+#intake-root .building {
+  font-size: 1.4rem;
+}
+
+.saved-games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.saved-game-card {
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 3px solid var(--console-border);
+  background: rgba(36, 29, 63, 0.7);
+  color: var(--console-text);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.saved-game-card:hover {
+  border-color: #8ef0a9;
+}
+
+.saved-game-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.saved-game-idea {
+  opacity: 0.85;
+  margin: 4px 0;
+}
+
+.saved-game-meta {
+  font-size: 0.9rem;
+  opacity: 0.65;
 }
 
 .panel {

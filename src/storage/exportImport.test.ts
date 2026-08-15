@@ -12,6 +12,7 @@ import { starterEnvironment } from '../game/starterEnvironment';
 
 const record: ProjectRecord = {
   version: 1,
+  id: 'test-game',
   savedAt: '2026-08-12T10:00:00.000Z',
   idea: 'dragon bakery',
   workspace: { blocks: { languageVersion: 0, blocks: [] } },

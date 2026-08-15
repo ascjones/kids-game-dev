@@ -9,7 +9,11 @@ let dirs: BridgeDirs;
 
 beforeEach(() => {
   root = fs.mkdtempSync(path.join(os.tmpdir(), 'bridge-test-'));
-  dirs = { outbox: path.join(root, 'outbox'), inbox: path.join(root, 'inbox') };
+  dirs = {
+    outbox: path.join(root, 'outbox'),
+    inbox: path.join(root, 'inbox'),
+    saves: path.join(root, 'saves'),
+  };
   fs.mkdirSync(dirs.outbox, { recursive: true });
   fs.mkdirSync(dirs.inbox, { recursive: true });
 });
@@ -121,5 +125,56 @@ describe('handleBridgeRequest', () => {
 
   it('404s unknown routes', () => {
     expect(handleBridgeRequest(dirs, 'GET', '/other', '').status).toBe(404);
+  });
+});
+
+describe('server-side game library', () => {
+  const record = (id: string, idea: string, completed: string[] = []) =>
+    JSON.stringify({
+      id,
+      idea,
+      savedAt: '2026-08-15T10:00:00.000Z',
+      environment: { title: `${idea} world` },
+      challengeProgress: { completedIds: completed, currentIndex: 0, hintStages: {} },
+    });
+
+  it('saves a game, lists it, and loads it back', () => {
+    const post = handleBridgeRequest(dirs, 'POST', '/saves', record('game-1', 'space cats', ['a']));
+    expect(post.status).toBe(200);
+    expect(fs.existsSync(path.join(dirs.saves, 'game-1.json'))).toBe(true);
+
+    const list = handleBridgeRequest(dirs, 'GET', '/saves', '');
+    const saves = (list.body as { saves: Array<Record<string, unknown>> }).saves;
+    expect(saves).toHaveLength(1);
+    expect(saves[0]).toMatchObject({
+      id: 'game-1',
+      idea: 'space cats',
+      title: 'space cats world',
+      completedChallenges: 1,
+    });
+
+    const get = handleBridgeRequest(dirs, 'GET', '/saves/game-1', '');
+    expect(get.status).toBe(200);
+    expect((get.body as { record: { idea: string } }).record.idea).toBe('space cats');
+  });
+
+  it('saving twice with the same id overwrites in place', () => {
+    handleBridgeRequest(dirs, 'POST', '/saves', record('game-1', 'first'));
+    handleBridgeRequest(dirs, 'POST', '/saves', record('game-1', 'second'));
+    const list = handleBridgeRequest(dirs, 'GET', '/saves', '');
+    expect((list.body as { saves: unknown[] }).saves).toHaveLength(1);
+  });
+
+  it('rejects a save without a usable id and strips traversal from ids', () => {
+    const noId = handleBridgeRequest(dirs, 'POST', '/saves', JSON.stringify({ idea: 'x' }));
+    expect(noId.status).toBe(400);
+
+    handleBridgeRequest(dirs, 'POST', '/saves', record('../../evil', 'sneaky'));
+    expect(fs.existsSync(path.join(root, 'evil.json'))).toBe(false);
+    expect(fs.readdirSync(dirs.saves).every((f) => !f.includes('..'))).toBe(true);
+  });
+
+  it('404s a missing save id', () => {
+    expect(handleBridgeRequest(dirs, 'GET', '/saves/nope', '').status).toBe(404);
   });
 });

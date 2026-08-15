@@ -22,6 +22,7 @@ import {
   type ProjectRecord,
 } from './storage/projects';
 import { downloadProject, importProjectFromText } from './storage/exportImport';
+import { listServerSaves, loadServerSave, saveToServer } from './storage/serverSaves';
 import { playBeep } from './game/sounds';
 
 const notice = createKidNotice(document.querySelector<HTMLElement>('#kid-notice-root')!);
@@ -78,6 +79,7 @@ function bootScene(): Promise<PlatformerScene> {
 interface WorkbenchSeed {
   environment: Environment;
   idea: string;
+  id: string | null;
   workspace: Record<string, unknown> | null;
   challengeProgress: ProjectRecord['challengeProgress'] | null;
 }
@@ -110,15 +112,18 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
   jsView.update(editor.getCode());
 
   const idea = seed.idea;
+  let projectId = seed.id || crypto.randomUUID();
   const collectRecord = (): ProjectRecord => ({
     version: 1,
+    id: projectId,
     savedAt: new Date().toISOString(),
     idea,
     workspace: editor.serialize(),
     challengeProgress: engine.progress(),
     environment: scene.getEnvironment(),
   });
-  const autosaver = createAutosaver(collectRecord);
+  // Server library is the default home for games; IndexedDB is the cache.
+  const autosaver = createAutosaver(collectRecord, undefined, saveToServer);
 
   const panel = createChallengePanel(document.querySelector<HTMLElement>('#challenge-panel')!, {
     onHintRequest: () => {
@@ -285,6 +290,7 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
         confirm: (message) => notice.confirm(message),
         announceError: (message) => notice.info(message),
         applyProject: async (record) => {
+          projectId = record.id || projectId;
           await saveProject(record);
           scene.setEnvironment(record.environment);
           engine = new ChallengeEngine(challengesResult.challenges, record.challengeProgress);
@@ -415,13 +421,32 @@ async function start(): Promise<void> {
     await bootWorkbench({
       environment: result.source === 'loaded' ? result.environment : saved.environment,
       idea: saved.idea,
+      id: saved.id || null,
       workspace: saved.workspace,
       challengeProgress: saved.challengeProgress,
     });
     return;
   }
 
+  const saves = await listServerSaves();
   const intake = createIntake(intakeRoot, {
+    saves,
+    onLoadSave: async (id) => {
+      const record = await loadServerSave(id);
+      if (!record) {
+        notice.info("That saved game couldn't wake up — try another one!");
+        return;
+      }
+      await saveProject(record);
+      intake.dismiss();
+      await bootWorkbench({
+        environment: record.environment,
+        idea: record.idea,
+        id: record.id || null,
+        workspace: record.workspace,
+        challengeProgress: record.challengeProgress,
+      });
+    },
     onSubmit: async (idea) => {
       intake.showBuilding();
       await sendDecision(ideaDecision(idea));
@@ -433,6 +458,7 @@ async function start(): Promise<void> {
       await bootWorkbench({
         environment: result.environment,
         idea,
+        id: null,
         workspace: null,
         challengeProgress: null,
       });

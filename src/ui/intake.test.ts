@@ -93,6 +93,37 @@ describe('intake screen', () => {
     expect(cards.filter((card) => card.disabled)).toHaveLength(5);
   });
 
+  it('lists saved games and loads one on click', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const onLoadSave = vi.fn();
+    createIntake(container, {
+      onSubmit: vi.fn(async () => {}),
+      onLoadSave,
+      saves: [
+        {
+          id: 'game-1',
+          idea: 'space cats',
+          title: 'Space Cats World',
+          savedAt: '2026-08-15T10:00:00.000Z',
+          completedChallenges: 3,
+        },
+      ],
+    });
+    const card = container.querySelector<HTMLButtonElement>('.saved-game-card')!;
+    expect(card.textContent).toContain('Space Cats World');
+    expect(card.textContent).toContain('3 challenges done');
+    card.click();
+    expect(onLoadSave).toHaveBeenCalledWith('game-1');
+  });
+
+  it('hides the saved games section when there are none', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    createIntake(container, { onSubmit: vi.fn(async () => {}), saves: [] });
+    expect(container.querySelector<HTMLElement>('.saved-games')!.hidden).toBe(true);
+  });
+
   it('submits the typed idea', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

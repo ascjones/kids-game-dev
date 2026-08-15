@@ -1,0 +1,49 @@
+import { projectRecordSchema, type ProjectRecord } from './projects';
+
+// Server-side game library (saves/ on disk, via the dev-server middleware).
+// This is the default home for games: IndexedDB stays the fast local cache
+// for the current one. Every call tolerates a missing server.
+
+export interface SaveSummary {
+  id: string;
+  idea: string;
+  title: string;
+  savedAt: string;
+  completedChallenges: number;
+}
+
+export async function saveToServer(record: ProjectRecord): Promise<boolean> {
+  try {
+    const res = await fetch('/__bridge/saves', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(record),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function listServerSaves(): Promise<SaveSummary[]> {
+  try {
+    const res = await fetch('/__bridge/saves');
+    if (!res.ok) return [];
+    const data = (await res.json()) as { saves?: SaveSummary[] };
+    return data.saves ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function loadServerSave(id: string): Promise<ProjectRecord | null> {
+  try {
+    const res = await fetch(`/__bridge/saves/${encodeURIComponent(id)}`);
+    if (!res.ok) return null;
+    const data = (await res.json()) as { record?: unknown };
+    const parsed = projectRecordSchema.safeParse(data.record);
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
