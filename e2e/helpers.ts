@@ -40,13 +40,22 @@ export function dropInbox(name: string, message: unknown): void {
 export async function bootToWorkbench(page: Page, idea = 'a brave test robot'): Promise<void> {
   await page.goto('/');
   await page.locator('#intake-root textarea').fill(idea);
-  await page.locator('#intake-root button.kid-button').click();
-  await expect(page.getByRole('button', { name: '▶ Play test' })).toBeVisible();
+  await page.locator('#intake-root button.intake-build').click();
+  await expect(page.getByRole('button', { name: '🧩 Build blocks (E)' })).toBeVisible();
   await page.waitForFunction(() => '__kidGame' in window);
 }
 
-/** Load a block program through the dev seam and press Play test. */
+/**
+ * Load a block program through the dev seam and enter Play mode. The app has
+ * two modes: Build (editor open) and Play (editor closed, session running) —
+ * closing the editor is what runs the program.
+ */
 export async function playProgram(page: Page, blocks: unknown[]): Promise<void> {
+  const overlay = page.locator('#editor-overlay');
+  if (await overlay.isHidden()) {
+    await page.keyboard.press('e');
+    await expect(overlay).toBeVisible();
+  }
   await page.evaluate(
     (state) =>
       (
@@ -56,7 +65,8 @@ export async function playProgram(page: Page, blocks: unknown[]): Promise<void> 
       ).__kidGame.loadWorkspace(state),
     { blocks: { languageVersion: 0, blocks } },
   );
-  await page.getByRole('button', { name: '▶ Play test' }).click();
+  await page.keyboard.press('Escape');
+  await expect(overlay).toBeHidden();
 }
 
 // ---- Block program builders (workspace JSON, same shapes the editor saves) --

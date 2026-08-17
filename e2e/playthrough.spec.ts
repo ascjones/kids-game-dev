@@ -62,11 +62,15 @@ test('all challenges are completable with blocks only', async ({ page }) => {
   }).toPass();
 });
 
-test('a play test that misses the goal shows the "not yet" state', async ({ page }) => {
+test('a played session that misses the goal shows the "not yet" state on returning to Build', async ({
+  page,
+}) => {
   await bootToWorkbench(page);
   // A clean program that does not add a platform: challenge 1 is not satisfied.
   await playProgram(page, PROGRAMS.jumpOnUpKey);
-  await page.getByRole('button', { name: '⏹ Stop' }).click();
+  // Play long enough to count as a real attempt, then go back to building.
+  await page.waitForTimeout(3500);
+  await page.keyboard.press('e');
   await expect(page.locator('#challenge-panel .not-yet')).toContainText('Not yet');
   await expect(page.locator('#challenge-panel .explanation')).toHaveCount(0);
 });

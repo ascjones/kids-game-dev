@@ -34,7 +34,7 @@ test('the block editor opens as an overlay via button, E key, and Escape', async
   const overlay = page.locator('#editor-overlay');
   await expect(overlay).toBeHidden();
 
-  await page.getByRole('button', { name: '🧩 Blocks (E)' }).click();
+  await page.getByRole('button', { name: '🧩 Build blocks (E)' }).click();
   await expect(overlay).toBeVisible();
   await expect(page.getByRole('region', { name: 'Blocks workspace.' })).toBeVisible();
 

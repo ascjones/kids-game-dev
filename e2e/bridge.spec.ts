@@ -27,7 +27,8 @@ test('the free-request box sends the child\'s words verbatim', async ({ page }) 
   await bootToWorkbench(page);
   await page.locator('#game-maker-box textarea').fill('make my player a wizard');
   await page.getByRole('button', { name: 'Send' }).click();
-  await expect(page.locator('.kid-notice').last()).toContainText('Sent to the Game Wizard');
+  // The wizard box shows in-box progress ("Casting …") instead of a toast.
+  await expect(page.locator('#game-maker-box .gm-status')).toContainText('make my player a wizard');
   await expect(() => {
     const files = outboxFiles('free_request');
     expect(files).toHaveLength(1);

@@ -16,7 +16,7 @@ test('a project survives reload mid-challenge', async ({ page }) => {
 
   await page.reload();
   // No intake this time: the saved project resumes on challenge 2 with its blocks.
-  await expect(page.getByRole('button', { name: '▶ Play test' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '🧩 Build blocks (E)' })).toBeVisible();
   await expect(page.locator('#intake-root')).toHaveCount(0);
   await expect(page.locator('#challenge-panel')).toContainText('jump');
   await expect(page.locator('#js-view')).toContainText('api.spawnPlatform');

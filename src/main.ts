@@ -10,7 +10,7 @@ import { createChallengePanel, type PanelView } from './ui/challengePanel';
 import { createGameMakerBox } from './ui/gameMakerBox';
 import { createJsView } from './ui/jsView';
 import { createKidNotice } from './ui/kidNotice';
-import { createPlayTestControls, type PlayTestHandle } from './ui/playTest';
+import { createSessionController, type SessionController } from './ui/playTest';
 import { createIntake, ideaDecision } from './ui/intake';
 import { sendDecision, startInboxPolling } from './bridge/client';
 import {
@@ -136,6 +136,9 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
       editor.setToolboxCategories(engine.toolboxCategories(), engine.justUnlocked());
       renderPanel();
       autosaver.trigger();
+      // A running session carries stats from the previous challenge; restart
+      // so the new challenge starts from a clean slate.
+      if (playTest?.isPlaying()) startPlaying();
     },
   });
 
@@ -201,7 +204,22 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
     autosaver.trigger();
   }
 
-  let playTest: PlayTestHandle | null = null;
+  let playTest: SessionController | null = null;
+  let sessionStartedAt = 0;
+  let emptyNudgeShown = false;
+
+  // Start (or restart) a play session — the editor-closed mode.
+  function startPlaying(): void {
+    if (!playTest) return;
+    if (playTest.isPlaying()) playTest.cancel();
+    const result = playTest.start();
+    if (result.started) {
+      sessionStartedAt = Date.now();
+    } else if (result.empty && !emptyNudgeShown) {
+      emptyNudgeShown = true;
+      notice.info('Your game is waiting for blocks! Press 🧩 Build blocks to make something happen.');
+    }
+  }
 
   const envSync = new EnvironmentSync({
     fetchEnvironment,
@@ -217,12 +235,9 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
   });
   envUpdateListeners.add(() => void envSync.onEnvironmentUpdated());
 
-  playTest = createPlayTestControls(
-    document.querySelector<HTMLElement>('#play-controls')!,
-    scene,
-    notice,
-    {
+  playTest = createSessionController(scene, {
       getCode: () => editor.getCode(),
+      onKidMessage: (message) => notice.info(message),
       onLiveState: (state) => {
         if (engine.evaluate(state) === 'completed') {
           onChallengeCompleted();
@@ -250,16 +265,26 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
             body: JSON.stringify(breadcrumb),
           }).catch(() => {});
         }
-        if (endedBy !== 'stop') return;
-        const result = engine.evaluate(state);
-        if (result === 'completed') {
-          onChallengeCompleted();
-        } else if (result === 'not_yet') {
-          renderPanel(true);
+        if (endedBy === 'success') {
+          // Keep the fun going: a fresh session after the celebration moment.
+          setTimeout(() => {
+            if (editorOverlay.hidden && playTest && !playTest.isPlaying()) startPlaying();
+          }, 700);
+          return;
+        }
+        if (endedBy === 'cancelled') {
+          // Entering Build mode is the natural "attempt over" moment — but only
+          // judge sessions that actually got played, not quick in-and-outs.
+          if (Date.now() - sessionStartedAt < 3000) return;
+          const result = engine.evaluate(state);
+          if (result === 'completed') {
+            onChallengeCompleted();
+          } else if (result === 'not_yet') {
+            renderPanel(true);
+          }
         }
       },
-    },
-  );
+    });
 
   // Editor toolbar: undo/reset/save (R8) and the export/import round trip (R14).
   const toolbar = document.querySelector<HTMLElement>('#editor-toolbar')!;
@@ -327,13 +352,9 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
   editor.onChange(() => {
     jsView.update(editor.getCode());
     autosaver.trigger();
-    // Editing blocks mid-play would leave the game running stale code — stop
-    // it (without judging the interrupted session) so Play test always runs
-    // what the child sees.
-    if (playTest?.isPlaying()) {
-      playTest.cancel();
-      notice.info('You changed your blocks, so I stopped the game. Press Play test to try them!');
-    }
+    // No session cancel here: edits only happen in Build mode (no session
+    // running), and Blockly delivers change events asynchronously — a late
+    // event after the editor closes would kill the freshly started session.
   });
 
   // Block editor overlay: Blocks button, "e", or Escape to close.
@@ -341,23 +362,32 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
   const challengePanelElement = document.querySelector<HTMLElement>('#challenge-panel')!;
   const challengeSlot = document.querySelector<HTMLElement>('#challenge-slot')!;
   const challengeHome = challengePanelElement.parentElement!;
+  // Two modes: Build (editor open, session stopped) and Play (editor closed,
+  // session running). The mode toggle is the only play control.
   function toggleEditor(show = editorOverlay.hidden): void {
     editorOverlay.hidden = !show;
     if (show) {
+      playTest?.cancel();
       // The challenge belongs beside the blocks while building.
       challengeSlot.appendChild(challengePanelElement);
       panel.expand();
       editor.refresh();
     } else {
       challengeHome.appendChild(challengePanelElement);
+      startPlaying();
     }
+    modeButton.textContent = show ? '▶ Play my game (E)' : '🧩 Build blocks (E)';
   }
-  const blocksButton = document.createElement('button');
-  blocksButton.className = 'kid-button magic dock-blocks';
-  blocksButton.textContent = '🧩 Blocks (E)';
-  blocksButton.onclick = () => toggleEditor();
+  const modeButton = document.createElement('button');
+  modeButton.className = 'kid-button magic dock-blocks';
+  modeButton.textContent = '🧩 Build blocks (E)';
+  modeButton.onclick = () => toggleEditor();
   const playControlsBar = document.querySelector<HTMLElement>('#play-controls')!;
-  playControlsBar.prepend(blocksButton);
+  playControlsBar.prepend(modeButton);
+  const dockTip = document.createElement('span');
+  dockTip.className = 'dock-tip';
+  dockTip.textContent = 'arrow keys to play';
+  playControlsBar.appendChild(dockTip);
 
   // Minimize the dock to a single button so nothing blocks the view mid-game.
   const dockToggle = document.createElement('button');
@@ -376,7 +406,7 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
   newGameButton.className = 'kid-button secondary dock-new';
   newGameButton.textContent = 'New game';
   newGameButton.onclick = async () => {
-    playTest?.stop();
+    playTest?.cancel();
     const saveFirst = await notice.confirm(
       'Before you start a new game — save this one to a file so you can bring it back later?',
       '💾 Save it first',
@@ -411,6 +441,8 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
   editor.setToolboxCategories(engine.toolboxCategories());
   renderPanel();
   autosaver.trigger();
+  // The app boots in Play mode: a saved program runs immediately.
+  startPlaying();
 
   if (import.meta.env.DEV) {
     // Acceptance-test seam (dev only): lets Playwright load block programs
