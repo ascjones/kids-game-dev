@@ -12,7 +12,19 @@ export interface SaveSummary {
   completedChallenges: number;
 }
 
+/**
+ * A game earns its library slot once it has any real content — blocks on the
+ * workspace or a completed challenge. Freshly-booted empty shells (including
+ * abandoned intake runs) never reach the server, which keeps the saved-games
+ * list free of duplicates.
+ */
+export function isWorthSaving(record: ProjectRecord): boolean {
+  const blocks = (record.workspace as { blocks?: { blocks?: unknown[] } }).blocks?.blocks;
+  return (blocks?.length ?? 0) > 0 || record.challengeProgress.completedIds.length > 0;
+}
+
 export async function saveToServer(record: ProjectRecord): Promise<boolean> {
+  if (!isWorthSaving(record)) return false;
   try {
     const res = await fetch('/__bridge/saves', {
       method: 'POST',
