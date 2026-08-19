@@ -109,6 +109,20 @@ describe('swapWorldForChallenge ordering', () => {
     expect(order).toEqual(['apply-begin', 'apply-end']);
   });
 
+  it('restarts play even when applying the world fails', async () => {
+    // The session was stopped to make room for the new world. If the save that
+    // precedes the swap fails, the child must still get their game back rather
+    // than being left staring at a frozen screen.
+    const { order, deps } = recorder(true);
+    deps.applyEnvironment = async () => {
+      order.push('apply-begin');
+      throw new Error('autosave failed');
+    };
+
+    await expect(swapWorldForChallenge(wideWorld, deps)).rejects.toThrow('autosave failed');
+    expect(order).toEqual(['cancel', 'apply-begin', 'start']);
+  });
+
   it('with no world to apply, a running session just restarts for the new challenge', async () => {
     const { order, deps } = recorder(true);
     await swapWorldForChallenge(null, deps);

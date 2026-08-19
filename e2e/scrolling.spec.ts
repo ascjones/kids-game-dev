@@ -317,3 +317,38 @@ test('Covers R7. Harness-authored platforms keep their world coordinates while t
     expect(scrolled.platforms).toEqual(WIDE_WORLD_PLATFORMS);
   });
 });
+
+test('advancing into the journey does not complete it with the previous challenge play', async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await bootToWorkbench(page);
+
+  // Sit on the win challenge, uncompleted, with the six before it done.
+  await seedChallengeProgress(page, CHALLENGES_BEFORE_THE_JOURNEY.slice(0, 6), 6);
+  await page.reload();
+  await page.waitForFunction(() => '__kidGame' in window);
+  expect(await page.evaluate(() => window.__kidGame.currentChallengeId())).toBe('win-condition');
+
+  // Win it, which is also how the child leaves it: the celebration restarts a
+  // fresh session, and running right reaches the flag again in that one.
+  await playProgram(page, PROGRAMS.winAtGoal);
+  await expect(page.locator('#challenge-panel .explanation')).toContainText('YOU WIN', {
+    timeout: 20_000,
+  });
+  // Let the post-win session restart, re-touch the goal, and pass the 3s
+  // "was this a real attempt?" window that guards cancelled-session judging.
+  await page.waitForTimeout(6000);
+
+  await page.getByRole('button', { name: 'Next challenge →' }).click();
+  await expect(page.locator('#challenge-panel')).toContainText('great journey', {
+    timeout: 10_000,
+  });
+
+  // The journey is a three-screen run; a win triggered back on the old world
+  // must not count for it. Its explanation appearing here means it completed
+  // without the child travelling anywhere.
+  await page.waitForTimeout(3000);
+  await expect(page.locator('#challenge-panel .explanation')).not.toBeVisible();
+  expect(await page.evaluate(() => window.__kidGame.currentChallengeId())).toBe('great-journey');
+});

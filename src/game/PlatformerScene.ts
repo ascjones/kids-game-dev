@@ -509,11 +509,13 @@ export class PlatformerScene extends Phaser.Scene implements GameBackend {
       this.scoreText.setText(`⭐ ${this.runtime.stats.score}`);
 
       if (this.player.y > this.environment.world.height + 60) {
-        this.player.setPosition(
-          this.environment.player.spawn.x,
-          this.environment.player.spawn.y,
-        );
+        const spawn = this.environment.player.spawn;
+        this.player.setPosition(spawn.x, spawn.y);
         this.player.setVelocity(0, 0);
+        // Snap the camera with them. The gentle follow lerp would spend many
+        // frames travelling back from the world's bottom, leaving the child
+        // off-screen and pointing view-relative spawns at the old view.
+        this.cameras.main.centerOn(spawn.x, spawn.y);
       }
     } else {
       this.scoreText.setText('');

@@ -102,15 +102,18 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
     seed.challengeProgress ?? undefined,
   );
   // A challenge may carry its own world (KTD4). Normally it lands during the
-  // transition into that challenge; this catches the case where the tab closed
-  // between the transition and the save, which loses the marker and the world
-  // together. Already-applied worlds report nothing pending, so a plain reload
-  // never overwrites what the child (or the harness) has since changed.
-  const bootWorld = engine.pendingEnvironment();
-  if (bootWorld) {
-    scene.setEnvironment(bootWorld);
+  // transition into that challenge; this catches the cases where the engine
+  // arrives already sitting on such a challenge — the tab closed between the
+  // transition and the save, or a project was imported mid-arc. Already-applied
+  // worlds report nothing pending, so a plain reload never overwrites what the
+  // child (or the harness) has since changed.
+  function applyPendingChallengeWorld(): void {
+    const pending = engine.pendingEnvironment();
+    if (!pending) return;
+    scene.setEnvironment(pending);
     engine.markEnvironmentApplied();
   }
+  applyPendingChallengeWorld();
 
   const editor: EditorHandle = createEditor(
     document.querySelector<HTMLElement>('#blockly-container')!,
@@ -163,6 +166,8 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
           engine.markEnvironmentApplied();
           autosaver.trigger();
         },
+      }).catch(() => {
+        notice.info("That challenge's new world got stuck on its way here — keep playing, we'll try again next time!");
       });
     },
   });
@@ -231,6 +236,10 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
 
   let playTest: SessionController | null = null;
   let sessionStartedAt = 0;
+  // Which challenge the running session was started on. Advancing cancels the
+  // session, and a cancelled session must be judged against the challenge it
+  // was played on — never the one just moved to, whose check may be identical.
+  let sessionChallengeId: string | null = null;
   let emptyNudgeShown = false;
 
   // Start (or restart) a play session — the editor-closed mode.
@@ -240,6 +249,7 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
     const result = playTest.start();
     if (result.started) {
       sessionStartedAt = Date.now();
+      sessionChallengeId = engine.current()?.id ?? null;
     } else if (result.empty && !emptyNudgeShown) {
       emptyNudgeShown = true;
       notice.info('Your game is waiting for blocks! Press 🧩 Build blocks to make something happen.');
@@ -301,6 +311,11 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
           // Entering Build mode is the natural "attempt over" moment — but only
           // judge sessions that actually got played, not quick in-and-outs.
           if (Date.now() - sessionStartedAt < 3000) return;
+          // Advancing to the next challenge also cancels the session. Judging
+          // it now would score the previous challenge's play against the new
+          // one — and consecutive challenges can share a check, which would
+          // complete the new challenge before the child ever attempts it.
+          if (sessionChallengeId !== (engine.current()?.id ?? null)) return;
           const result = engine.evaluate(state);
           if (result === 'completed') {
             onChallengeCompleted();
@@ -347,6 +362,10 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
           await saveProject(record);
           scene.setEnvironment(record.environment);
           engine = new ChallengeEngine(challengesResult.challenges, record.challengeProgress);
+          // An older save can land straight onto a challenge that carries a
+          // world; without this the child would play the journey on the small
+          // world their file was saved with.
+          applyPendingChallengeWorld();
           editor.load(record.workspace);
           editor.setToolboxCategories(engine.toolboxCategories());
           renderPanel();

@@ -95,11 +95,17 @@ export async function swapWorldForChallenge(
   deps: ChallengeWorldSwapDeps,
 ): Promise<void> {
   const wasPlaying = deps.isPlayTestActive();
-  if (environment) {
-    if (wasPlaying) deps.cancelPlayTest();
-    await deps.applyEnvironment(environment);
+  try {
+    if (environment) {
+      if (wasPlaying) deps.cancelPlayTest();
+      await deps.applyEnvironment(environment);
+    }
+  } finally {
+    // Restart even when the swap failed: the session was stopped to make room
+    // for a world that never arrived, and leaving the child on a frozen game
+    // is worse than leaving them on the old world.
+    if (wasPlaying) deps.startPlayTest();
   }
-  if (wasPlaying) deps.startPlayTest();
 }
 
 /**

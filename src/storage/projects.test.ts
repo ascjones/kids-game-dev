@@ -7,6 +7,7 @@ import {
   createAutosaver,
   deleteProject,
   loadProject,
+  parseStoredProject,
   saveProject,
   type ProjectRecord,
 } from './projects';
@@ -114,5 +115,29 @@ describe('debounced autosave', () => {
     const autosaver = createAutosaver(() => makeRecord(), 100);
     await autosaver.flush();
     expect(await loadProject()).toBeNull();
+  });
+});
+
+describe('rescuing a save the schema can no longer accept', () => {
+  it('keeps the blocks and progress when the stored world is now out of bounds', () => {
+    // A world this wide was valid before world size was bounded; a child who
+    // saved one must not lose their game to the new rule.
+    const stored = makeRecord({
+      environment: { ...starterEnvironment, world: { width: 9000, height: 480 } },
+    });
+
+    const rescued = parseStoredProject(stored);
+
+    expect(rescued).not.toBeNull();
+    expect(rescued?.workspace).toEqual(stored.workspace);
+    expect(rescued?.challengeProgress).toEqual(stored.challengeProgress);
+    expect(rescued?.idea).toBe('ninja cat');
+    expect(rescued?.environment).toEqual(starterEnvironment);
+  });
+
+  it('still rejects a record broken beyond its world', () => {
+    expect(parseStoredProject({ version: 1, savedAt: '2026-08-19T00:00:00.000Z' })).toBeNull();
+    expect(parseStoredProject('not a project')).toBeNull();
+    expect(parseStoredProject(null)).toBeNull();
   });
 });
