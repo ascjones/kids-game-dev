@@ -116,6 +116,7 @@ export class PlatformerScene extends Phaser.Scene implements GameBackend {
     // Explicit teardown: destroying each object also removes its physics body;
     // colliders must go first or they would reference dead bodies.
     this.tweens.killAll();
+    this.cameras.main.stopFollow();
     for (const collider of this.colliders) collider.destroy();
     this.colliders = [];
     (this.platforms as Phaser.Physics.Arcade.StaticGroup | undefined)?.destroy(true);
@@ -137,8 +138,16 @@ export class PlatformerScene extends Phaser.Scene implements GameBackend {
       this.addPlatformSprite(p.x, p.y, p.width, p.height);
     }
 
+    // World and camera bounds always come from env.world (KTD1). The physics
+    // world's bottom edge stays open so a falling player passes world.height
+    // and the fall-respawn check in update() fires; when the world equals the
+    // viewport the camera cannot move, so single-screen worlds are unchanged.
+    this.physics.world.setBounds(0, 0, env.world.width, env.world.height, true, true, true, false);
+    this.cameras.main.setBounds(0, 0, env.world.width, env.world.height);
+
     this.player = this.physics.add.sprite(env.player.spawn.x, env.player.spawn.y, 'player');
     this.player.setCollideWorldBounds(true);
+    this.cameras.main.startFollow(this.player, false, 0.08, 0.08);
 
     this.collectibles = this.physics.add.group({ allowGravity: false });
     for (const c of env.collectibles) {
@@ -232,6 +241,7 @@ export class PlatformerScene extends Phaser.Scene implements GameBackend {
         padding: { x: 12, y: 4 },
       })
       .setOrigin(0.5, 0)
+      .setScrollFactor(0)
       .setDepth(10);
 
     this.stats = {
@@ -358,6 +368,7 @@ export class PlatformerScene extends Phaser.Scene implements GameBackend {
 
   private buildBackdrop(): void {
     const theme = this.environment.theme;
+    const world = this.environment.world;
     const { width, height } = this.scale;
 
     const skyGfx = this.add.graphics();
@@ -377,30 +388,46 @@ export class PlatformerScene extends Phaser.Scene implements GameBackend {
     skyGfx.fillCircle(width - 110, 86, 34);
     skyGfx.generateTexture('sky', width, height);
     skyGfx.destroy();
-    this.add.image(width / 2, height / 2, 'sky').setDepth(-10);
+    // The sky (gradient + sun) is a viewport-sized image pinned to the camera
+    // (scroll factor 0), so it covers whatever the camera shows without
+    // generating a world-sized texture; the sun stays fixed within the sky.
+    this.add.image(width / 2, height / 2, 'sky').setScrollFactor(0).setDepth(-10);
 
-    this.add.image(140, height - 30, 'hill').setDepth(-8).setAlpha(0.5);
-    this.add.image(520, height - 16, 'hill').setDepth(-8).setScale(1.4, 0.8).setAlpha(0.4);
+    // Hills and clouds tile per viewport-width chunk across the world (KTD5),
+    // anchored to the world floor. For an 800x480 world this is exactly one
+    // chunk with today's positions.
+    for (let offset = 0; offset < world.width; offset += width) {
+      this.add.image(offset + 140, world.height - 30, 'hill').setDepth(-8).setAlpha(0.5);
+      this.add
+        .image(offset + 520, world.height - 16, 'hill')
+        .setDepth(-8)
+        .setScale(1.4, 0.8)
+        .setAlpha(0.4);
 
-    for (const [x, y, scale, duration] of [
-      [120, 70, 0.9, 46000],
-      [420, 120, 0.6, 60000],
-      [680, 50, 0.75, 52000],
-    ] as const) {
-      const cloud = this.add.image(x, y, 'cloud').setDepth(-7).setScale(scale).setAlpha(0.9);
-      this.tweens.add({
-        targets: cloud,
-        x: x + this.scale.width,
-        duration,
-        repeat: -1,
-        onRepeat: () => cloud.setX(-60),
-      });
+      for (const [x, y, scale, duration] of [
+        [120, 70, 0.9, 46000],
+        [420, 120, 0.6, 60000],
+        [680, 50, 0.75, 52000],
+      ] as const) {
+        const cloud = this.add
+          .image(offset + x, y, 'cloud')
+          .setDepth(-7)
+          .setScale(scale)
+          .setAlpha(0.9);
+        this.tweens.add({
+          targets: cloud,
+          x: offset + x + width,
+          duration,
+          repeat: -1,
+          onRepeat: () => cloud.setX(offset - 60),
+        });
+      }
     }
 
     if (this.environment.weather === 'rain') {
       this.add
         .particles(0, 0, 'raindrop', {
-          x: { min: -40, max: this.scale.width + 40 },
+          x: { min: -40, max: world.width + 40 },
           y: -12,
           speedY: { min: 480, max: 640 },
           speedX: { min: 30, max: 70 },
@@ -452,7 +479,7 @@ export class PlatformerScene extends Phaser.Scene implements GameBackend {
       this.runtime.frame(delta / 1000, held);
       this.scoreText.setText(`⭐ ${this.runtime.stats.score}`);
 
-      if (this.player.y > this.scale.height + 60) {
+      if (this.player.y > this.environment.world.height + 60) {
         this.player.setPosition(
           this.environment.player.spawn.x,
           this.environment.player.spawn.y,
@@ -544,6 +571,7 @@ export class PlatformerScene extends Phaser.Scene implements GameBackend {
           0xffffff,
         ],
       })
+      .setScrollFactor(0)
       .setDepth(19);
     this.time.delayedCall(2600, () => confetti.stop());
     this.winText = this.add
@@ -555,6 +583,7 @@ export class PlatformerScene extends Phaser.Scene implements GameBackend {
       })
       .setOrigin(0.5)
       .setScale(0)
+      .setScrollFactor(0)
       .setDepth(20);
     this.tweens.add({
       targets: this.winText,
