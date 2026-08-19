@@ -36,6 +36,16 @@ export class EnvironmentSync {
     await this.applyNow();
   }
 
+  /**
+   * Apply a world handed to us rather than fetched — a challenge's bundled
+   * environment (KTD4). No deferral here: the caller stops the session first
+   * (see `swapWorldForChallenge`) and awaits this, so the swap cannot race a
+   * restart.
+   */
+  async applyChallengeEnvironment(environment: Environment): Promise<void> {
+    await this.apply(environment);
+  }
+
   /** Call when a play test ends, to apply a deferred swap. */
   async onPlayTestEnded(): Promise<void> {
     if (!this.pending) return;
@@ -55,9 +65,53 @@ export class EnvironmentSync {
       if (result.kidMessage) this.deps.announce(result.kidMessage);
       return;
     }
+    await this.apply(result.environment);
+  }
+
+  /** Save first, swap second: the child's work never falls into the gap. */
+  private async apply(environment: Environment): Promise<void> {
     await this.deps.autosave();
     const announce = this.deps.hasProgress();
-    this.deps.applyEnvironment(result.environment);
+    this.deps.applyEnvironment(environment);
     if (announce) this.deps.announce(NEW_WORLD_MESSAGE);
   }
+}
+
+export interface ChallengeWorldSwapDeps {
+  isPlayTestActive(): boolean;
+  cancelPlayTest(): void;
+  startPlayTest(): void;
+  applyEnvironment(environment: Environment): Promise<void>;
+}
+
+/**
+ * Hand a challenge's bundled world to the game around a running session (KTD4).
+ * A session carries stats and a scene built on the old world, so it is stopped
+ * before the swap and restarted only once the swap has finished — the ordering
+ * a deferred (unawaited) swap cannot guarantee.
+ */
+export async function swapWorldForChallenge(
+  environment: Environment | null,
+  deps: ChallengeWorldSwapDeps,
+): Promise<void> {
+  const wasPlaying = deps.isPlayTestActive();
+  if (environment) {
+    if (wasPlaying) deps.cancelPlayTest();
+    await deps.applyEnvironment(environment);
+  }
+  if (wasPlaying) deps.startPlayTest();
+}
+
+/**
+ * Which world a returning game boots on (KTD4). The harness file normally wins,
+ * but once a challenge-carried world has been applied the saved world outranks
+ * it — otherwise a reload mid-journey would silently shrink the world back.
+ */
+export function resolveBootEnvironment(
+  fetched: LoadResult,
+  saved: Environment,
+  challengeWorldApplied: boolean,
+): Environment {
+  if (challengeWorldApplied) return saved;
+  return fetched.source === 'loaded' ? fetched.environment : saved;
 }

@@ -80,6 +80,15 @@ may rewrite prompts, hints, and explanations to match the child's theme, but
 keep the six `check` names and their order — completion detection is in-app
 code keyed by those names.
 
+A challenge may also carry its own world: an optional `environment` field
+holding a complete environment object (same schema as `environment.json`). The
+app swaps that world in the first time the child reaches that challenge, and
+never again — later edits by the child or by you are safe. Two rules: the
+embedded world must pass the environment schema (a broken one throws away the
+whole challenges file, not just that challenge), and once a child is living on
+a challenge-carried world, that world survives reloads even if you rewrite
+`environment.json` — send `environment_updated` to change it.
+
 ## What you never do
 
 - Never write TypeScript or app code as a response to bridge traffic —

@@ -1,10 +1,15 @@
 import { createGame } from './game/boot';
 import { PlatformerScene } from './game/PlatformerScene';
 import { fetchEnvironment } from './game/environmentLoader';
-import { EnvironmentSync } from './game/environmentSync';
+import {
+  EnvironmentSync,
+  resolveBootEnvironment,
+  swapWorldForChallenge,
+} from './game/environmentSync';
 import type { Environment } from './game/environmentSchema';
 import { createEditor, type EditorHandle } from './blocks/editor';
 import { ChallengeEngine } from './challenges/engine';
+import { hasChallengeEnvironmentApplied } from './challenges/types';
 import { fetchChallenges } from './challenges/loader';
 import { createChallengePanel, type PanelView } from './ui/challengePanel';
 import { createGameMakerBox } from './ui/gameMakerBox';
@@ -96,6 +101,16 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
     challengesResult.challenges,
     seed.challengeProgress ?? undefined,
   );
+  // A challenge may carry its own world (KTD4). Normally it lands during the
+  // transition into that challenge; this catches the case where the tab closed
+  // between the transition and the save, which loses the marker and the world
+  // together. Already-applied worlds report nothing pending, so a plain reload
+  // never overwrites what the child (or the harness) has since changed.
+  const bootWorld = engine.pendingEnvironment();
+  if (bootWorld) {
+    scene.setEnvironment(bootWorld);
+    engine.markEnvironmentApplied();
+  }
 
   const editor: EditorHandle = createEditor(
     document.querySelector<HTMLElement>('#blockly-container')!,
@@ -136,9 +151,19 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
       editor.setToolboxCategories(engine.toolboxCategories(), engine.justUnlocked());
       renderPanel();
       autosaver.trigger();
-      // A running session carries stats from the previous challenge; restart
-      // so the new challenge starts from a clean slate.
-      if (playTest?.isPlaying()) startPlaying();
+      // The new challenge may bring its own world, and a running session
+      // carries stats (and a scene) from the previous one — so stop, swap,
+      // then start the new challenge from a clean slate.
+      void swapWorldForChallenge(engine.pendingEnvironment(), {
+        isPlayTestActive: () => playTest?.isPlaying() ?? false,
+        cancelPlayTest: () => playTest?.cancel(),
+        startPlayTest: () => startPlaying(),
+        applyEnvironment: async (environment) => {
+          await envSync.applyChallengeEnvironment(environment);
+          engine.markEnvironmentApplied();
+          autosaver.trigger();
+        },
+      });
     },
   });
 
@@ -467,10 +492,16 @@ async function start(): Promise<void> {
 
   if (saved) {
     intakeRoot.remove();
-    // Prefer the harness's current world; fall back to the saved snapshot.
+    // Prefer the harness's current world; fall back to the saved snapshot —
+    // unless this game is already living on a challenge-carried world, which
+    // outranks the harness file so a reload cannot shrink it back (KTD4).
     const result = await fetchEnvironment();
     await bootWorkbench({
-      environment: result.source === 'loaded' ? result.environment : saved.environment,
+      environment: resolveBootEnvironment(
+        result,
+        saved.environment,
+        hasChallengeEnvironmentApplied(saved.challengeProgress),
+      ),
       idea: saved.idea,
       id: saved.id || null,
       workspace: saved.workspace,

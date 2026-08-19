@@ -46,6 +46,29 @@ describe('project persistence', () => {
     expect(loaded).toEqual(record);
   });
 
+  it('keeps parsing saves written before the challenge-world marker existed', async () => {
+    // R10: challengeProgress from an older build has no
+    // appliedEnvironmentChallengeId key at all.
+    await saveProject(makeRecord());
+    const loaded = await loadProject();
+    expect(loaded).not.toBeNull();
+    expect(loaded?.challengeProgress.appliedEnvironmentChallengeId).toBeUndefined();
+  });
+
+  it('round-trips the applied challenge-world marker', async () => {
+    await saveProject(
+      makeRecord({
+        challengeProgress: {
+          completedIds: ['add-platform'],
+          currentIndex: 1,
+          hintStages: {},
+          appliedEnvironmentChallengeId: 'go-wide',
+        },
+      }),
+    );
+    expect((await loadProject())?.challengeProgress.appliedEnvironmentChallengeId).toBe('go-wide');
+  });
+
   it('loadProject returns null on an empty store', async () => {
     expect(await loadProject()).toBeNull();
   });

@@ -1,4 +1,5 @@
 import { ALL_CATEGORY_IDS, type CategoryId } from '../blocks/toolbox';
+import type { Environment } from '../game/environmentSchema';
 import { runCheck } from './checks';
 import {
   emptyProgress,
@@ -96,6 +97,25 @@ export class ChallengeEngine {
     return 'completed';
   }
 
+  /**
+   * The world the active challenge brings with it, if it carries one and it has
+   * not been applied yet (KTD4). Null once applied, so re-renders, reloads and
+   * the child's own later edits are never overwritten.
+   */
+  pendingEnvironment(): Environment | null {
+    const current = this.current();
+    if (!current?.environment) return null;
+    if (this.state.appliedEnvironmentChallengeId === current.id) return null;
+    return current.environment;
+  }
+
+  /** Record that the active challenge's world is now the one on screen. */
+  markEnvironmentApplied(): void {
+    const current = this.current();
+    if (!current?.environment) return;
+    this.state.appliedEnvironmentChallengeId = current.id;
+  }
+
   /** Move on after the explanation was shown. */
   advance(): void {
     if (this.currentCompleted()) {
@@ -108,6 +128,9 @@ export class ChallengeEngine {
       completedIds: [...this.state.completedIds],
       currentIndex: this.state.currentIndex,
       hintStages: { ...this.state.hintStages },
+      ...(this.state.appliedEnvironmentChallengeId === undefined
+        ? {}
+        : { appliedEnvironmentChallengeId: this.state.appliedEnvironmentChallengeId }),
     };
   }
 }
