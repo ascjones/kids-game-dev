@@ -450,9 +450,12 @@ export class PlatformerScene extends Phaser.Scene implements GameBackend {
     }
 
     if (this.environment.weather === 'rain') {
+      // Rain falls on the camera, not on the world: spreading the same drop
+      // budget across a six-screen world would thin the shower to a sixth of
+      // its density and simulate most of it off-screen.
       this.add
         .particles(0, 0, 'raindrop', {
-          x: { min: -40, max: world.width + 40 },
+          x: { min: -40, max: width + 40 },
           y: -12,
           speedY: { min: 480, max: 640 },
           speedX: { min: 30, max: 70 },
@@ -461,6 +464,7 @@ export class PlatformerScene extends Phaser.Scene implements GameBackend {
           frequency: 18,
           alpha: { start: 0.55, end: 0.25 },
         })
+        .setScrollFactor(0)
         .setDepth(-6);
     }
   }

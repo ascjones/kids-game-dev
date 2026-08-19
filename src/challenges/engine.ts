@@ -128,9 +128,7 @@ export class ChallengeEngine {
       completedIds: [...this.state.completedIds],
       currentIndex: this.state.currentIndex,
       hintStages: { ...this.state.hintStages },
-      ...(this.state.appliedEnvironmentChallengeId === undefined
-        ? {}
-        : { appliedEnvironmentChallengeId: this.state.appliedEnvironmentChallengeId }),
+      appliedEnvironmentChallengeId: this.state.appliedEnvironmentChallengeId,
     };
   }
 }
