@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ideation: Impressive Generated Games, Kid-Programmed Behaviour</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel-soft: #1c2330;
+    --ink: #d8e0ea;
+    --muted: #8b98a9;
+    --accent: #58e0a0;
+    --accent-text: #7ee8b6;
+    --amber: #e0b558;
+    --amber-text: #ecc97e;
+    --rose: #e07a8a;
+    --rose-text: #eda0ac;
+    --blue: #6ab0f3;
+    --blue-text: #8cc3f7;
+    --border: #2a3342;
+    --code-bg: #10151d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    font-size: 15.5px;
+    line-height: 1.6;
+  }
+  .page { max-width: 920px; margin-inline: auto; padding: 2.5rem 1.5rem 4rem; }
+  p, li, dd { max-width: 72ch; }
+  h1, h2, h3 { font-family: "SF Mono", "Menlo", "Consolas", monospace; line-height: 1.25; }
+  h1 { font-size: 1.7rem; color: var(--accent-text); margin: 0.4rem 0 0.2rem; }
+  h2 { font-size: 1.25rem; margin-top: 3rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+  h3 { font-size: 1.05rem; margin: 0; }
+  code { font-family: "SF Mono", "Menlo", "Consolas", monospace; font-size: 0.86em; background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: 0.08em 0.35em; color: var(--blue-text); }
+  strong { color: inherit; }
+  a { color: var(--blue-text); }
+  .eyebrow { font-family: "SF Mono", "Menlo", monospace; font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent-text); }
+  .meta { display: flex; flex-wrap: wrap; gap: 0.5rem 1.6rem; margin: 0.8rem 0 0; padding: 0; list-style: none; font-family: "SF Mono", "Menlo", monospace; font-size: 0.8rem; color: var(--muted); }
+  .meta b { color: var(--ink); font-weight: 600; }
+  nav.doc-nav { margin-top: 1.6rem; font-family: "SF Mono", "Menlo", monospace; font-size: 0.82rem; }
+  nav.doc-nav a { margin-right: 1.2rem; }
+  .idea { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 1.2rem 1.4rem 1.1rem; margin: 1.2rem 0; }
+  .idea-head { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; }
+  .rank { font-family: "SF Mono", "Menlo", monospace; font-weight: 700; color: var(--accent-text); font-size: 1.05rem; }
+  .chips { display: flex; gap: 0.45rem; flex-wrap: wrap; margin: 0.55rem 0 0.8rem; }
+  .chip { font-family: "SF Mono", "Menlo", monospace; font-size: 0.72rem; border-radius: 999px; padding: 0.14rem 0.65rem; border: 1px solid var(--border); }
+  .chip.axis   { background: #14231d; color: var(--accent-text); }
+  .chip.conf   { background: #23200f; color: var(--amber-text); }
+  .chip.cx     { background: #101c2a; color: var(--blue-text); }
+  dl.fields { margin: 0.6rem 0 0; }
+  dl.fields dt { font-family: "SF Mono", "Menlo", monospace; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-top: 0.75rem; }
+  dl.fields dd { margin: 0.15rem 0 0; }
+  blockquote { margin: 0.3rem 0 0; padding: 0.4rem 0.9rem; border-left: 3px solid var(--border); background: var(--code-bg); border-radius: 0 6px 6px 0; color: var(--muted); font-size: 0.92em; }
+  table { border-collapse: collapse; width: 100%; margin-top: 1rem; font-size: 0.92rem; }
+  th, td { text-align: left; border: 1px solid var(--border); padding: 0.45rem 0.7rem; vertical-align: top; }
+  th { background: var(--panel-soft); font-family: "SF Mono", "Menlo", monospace; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .jump { background: var(--panel-soft); border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem 1rem; margin-top: 1rem; font-size: 0.9rem; }
+  .jump ol { margin: 0.3rem 0 0.2rem 1.2rem; padding: 0; }
+  figure { margin: 1rem 0 0.3rem; background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem; overflow-x: auto; }
+  figcaption { font-size: 0.78rem; color: var(--muted); margin-top: 0.4rem; font-family: "SF Mono", "Menlo", monospace; }
+  svg text { font-family: "SF Mono", "Menlo", monospace; }
+  .callout { background: var(--panel-soft); border: 1px solid var(--border); border-radius: 8px; padding: 0.8rem 1.1rem; margin-top: 1.2rem; }
+  .callout .eyebrow { color: var(--amber-text); }
+  footer.composition-signal { margin-top: 3.5rem; border-top: 1px solid var(--border); padding-top: 0.9rem; font-family: "SF Mono", "Menlo", monospace; font-size: 0.75rem; color: var(--muted); }
+  ul.axes { list-style: none; padding: 0; }
+  ul.axes li { margin: 0.35rem 0; }
+  ul.axes .ax { font-family: "SF Mono", "Menlo", monospace; color: var(--accent-text); }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <div class="eyebrow">ce-ideate · discovery document</div>
+  <h1>Impressive Generated Games, Kid-Programmed Behaviour</h1>
+  <ul class="meta">
+    <li><b>date</b> 2026-08-19</li>
+    <li><b>topic</b> impressive-generated-games</li>
+    <li><b>mode</b> repo-grounded</li>
+  </ul>
+  <p style="color: var(--muted); margin-top: 0.9rem;"><b>Focus:</b> "the simple platformer is great, but what I want is to be able to generate more impressive games from the initial prompt but still allow the kid to program the behaviour."</p>
+  <nav class="doc-nav">
+    <a href="#grounding-context">Grounding Context</a>
+    <a href="#topic-axes">Topic Axes</a>
+    <a href="#ranked-ideas">Ranked Ideas</a>
+    <a href="#rejection-summary">Rejection Summary</a>
+  </nav>
+</header>
+
+<section id="grounding-context">
+  <h2>Grounding Context</h2>
+  <p><strong>Codebase context.</strong> A child's typed idea reaches an agent harness over a file bridge; the harness writes the game world as Zod-validated data (<code>environment.json</code>, <code>challenges.json</code>); the child programs behaviour with 15 Blockly blocks compiling to 12 <code>api.*</code> methods against a hardcoded Phaser platformer, guided by a 7-challenge arc. Today the harness's expressive range is: 6 theme colours, entity coordinates and patrol ranges, a 2-value weather enum, sound-name remapping, and challenge text. Everything else — physics, sprites, camera, entity behaviour, event vocabulary, check names — is compiled in. The governing constraint (KTD9) is that the harness writes data, never code.</p>
+  <p><strong>The recurring finding.</strong> Grounding surfaced a consistent pattern: <em>the schema already promises more than the engine delivers</em>. The production world writes <code>kind: "fish"</code> on collectibles — the renderer always draws a star. The schema validates any positive <code>world.width</code> — the canvas is hardcoded to 800×480 with zero camera calls. <code>checks.ts</code> types every check as <code>(state, params) =&gt; boolean</code> and its header says "adding a genre means adding predicates, not changing the engine" — no second predicate set ever shipped. <code>messages.ts</code> reserves a <code>progress_snapshot</code> outbox type, deferred from v1. The architecture repeatedly built doors it never opened; several top ideas are simply "cash in a door."</p>
+  <p><strong>External context.</strong> The prompt-to-game field (Rosebud AI, Astrocade, Websim, Roblox "Build") consolidated in 2025–26 around having the AI program everything — chat-only iteration, logic collapsed into the model. None solve kid-as-programmer; that seam is this app's ownable gap. Useful positive patterns: MakeCode Arcade's semantic <code>SpriteKind</code> categories, GDevelop's attachable Behaviors and genre kits, Bitsy/PuzzleScript's small declarative rule languages, Mario Maker 2's world-vs-level separation, Dreams' composable logic chips. AI sprite generation is commoditized but child-safety guidance points at harness-mediated, deterministic generation rather than kid→image-model prompting. No institutional learnings corpus exists yet (<code>docs/solutions/</code> absent).</p>
+</section>
+
+<section id="topic-axes">
+  <h2>Topic Axes</h2>
+  <ul class="axes">
+    <li><span class="ax">art-presentation</span> — sprites, tiles, effects, juice</li>
+    <li><span class="ax">world-structure</span> — layout, scale, multi-level progression</li>
+    <li><span class="ax">mechanics-genre</span> — what the engine can express beyond the fixed platformer</li>
+    <li><span class="ax">kid-surface</span> — the block API and challenge arc</li>
+    <li><span class="ax">pipeline-harness</span> — schema, contract, and kid↔harness iteration loop</li>
+  </ul>
+</section>
+
+<section id="ranked-ideas">
+  <h2>Ranked Ideas</h2>
+  <div class="jump">
+    <span class="eyebrow">jump to</span>
+    <ol>
+      <li><a href="#idea-1">Bring the Cast to Life: kind registry → creature composer</a></li>
+      <li><a href="#idea-2">Cash In world.width: camera-follow + wide worlds</a></li>
+      <li><a href="#idea-3">Multi-Level Campaigns: one program, many stages</a></li>
+      <li><a href="#idea-4">The Seam Doctrine: inert practicals + minted event blocks</a></li>
+      <li><a href="#idea-5">Feel-as-Data: physics profile, atmosphere list, audio palette</a></li>
+      <li><a href="#idea-6">Bespoke Challenge Arcs: parameterized checks + genre packs</a></li>
+      <li><a href="#idea-7">The Conversational Harness: intake interview + Yes-And snapshots</a></li>
+    </ol>
+  </div>
+
+  <article class="idea" id="idea-1">
+    <div class="idea-head"><span class="rank">1.</span><h3>Bring the Cast to Life: kind registry → creature composer</h3></div>
+    <div class="chips"><span class="chip axis">art-presentation</span><span class="chip conf">Confidence 85%</span><span class="chip cx">Complexity Low→Medium</span></div>
+    <dl class="fields">
+      <dt>Description</dt>
+      <dd>Two stages. <strong>Stage one:</strong> wire the existing-but-ignored <code>kind</code> fields to a vocabulary of procedural draw recipes (fish, candy, gem, coin, chest, portal…) built from the same <code>shade()</code>/polygon toolkit that draws the cat and star today — a rendering table, not a new subsystem. <strong>Stage two:</strong> grow it into a parametric creature composer: the harness writes a body plan as data (silhouette, ears, wings, tail, accent shapes) and the engine "develops" it into a sprite, giving a compositional space of creatures while keeping the app's cohesive hand-drawn look. No image generation anywhere — deterministic, local, and safe for kids by construction.</dd>
+      <dt>Basis</dt>
+      <dd><code>direct:</code> the schema field exists and the harness already uses it — <code>environmentSchema.ts:29</code> has <code>kind: z.string().default('star')</code>, the live production world sets <code>"kind": "fish"</code> (<code>environment.json:54</code>), and <code>PlatformerScene.ts:284-303</code> draws a 5-point star unconditionally. Verified by three independent agents and the adversarial pass.</dd>
+      <dt>Rationale</dt>
+      <dd>This is the single clearest gap between what the kid asked for and what they see: the harness is <em>already trying</em> to say "this collectible is a fish" and the engine throws that fact away. Closing it makes every generated world visually its own, and stage two makes "a dragon who bakes cakes" produce an actual dragon — the most visible transformation of prompt→game identity available per unit of work.</dd>
+      <dt>Downsides</dt>
+      <dd>A fixed vocabulary caps expressiveness until stage two lands; the body-plan grammar (how few parameters buy how many recognizable creatures) is a real design problem; procedural art will never match bitmap art's fidelity ceiling (the bitmap route was considered and cut — see rejections).</dd>
+    </dl>
+    <figure>
+      <svg viewBox="0 0 720 130" role="img" aria-label="Flow from prompt word to kind field to draw recipe to sprite">
+        <defs><marker id="ar1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#58e0a0"/></marker></defs>
+        <rect x="10" y="40" width="150" height="48" rx="8" fill="#1c2330" stroke="#2a3342"/>
+        <text x="85" y="60" text-anchor="middle" fill="#d8e0ea" font-size="12">"a dragon who</text>
+        <text x="85" y="76" text-anchor="middle" fill="#d8e0ea" font-size="12">bakes cakes"</text>
+        <line x1="160" y1="64" x2="205" y2="64" stroke="#58e0a0" stroke-width="1.5" marker-end="url(#ar1)"/>
+        <rect x="210" y="40" width="160" height="48" rx="8" fill="#14231d" stroke="#2a3342"/>
+        <text x="290" y="60" text-anchor="middle" fill="#7ee8b6" font-size="12">kind: "dragon"</text>
+        <text x="290" y="76" text-anchor="middle" fill="#8b98a9" font-size="11">(data — already legal)</text>
+        <line x1="370" y1="64" x2="415" y2="64" stroke="#58e0a0" stroke-width="1.5" marker-end="url(#ar1)"/>
+        <rect x="420" y="40" width="160" height="48" rx="8" fill="#101c2a" stroke="#2a3342"/>
+        <text x="500" y="60" text-anchor="middle" fill="#8cc3f7" font-size="12">draw recipe / body plan</text>
+        <text x="500" y="76" text-anchor="middle" fill="#8b98a9" font-size="11">(engine-owned)</text>
+        <line x1="580" y1="64" x2="625" y2="64" stroke="#58e0a0" stroke-width="1.5" marker-end="url(#ar1)"/>
+        <rect x="630" y="40" width="80" height="48" rx="8" fill="#1c2330" stroke="#58e0a0"/>
+        <text x="670" y="69" text-anchor="middle" fill="#d8e0ea" font-size="12">sprite</text>
+        <text x="360" y="118" text-anchor="middle" fill="#8b98a9" font-size="11">today: the middle box is written by the harness, then ignored — a star is drawn regardless</text>
+      </svg>
+      <figcaption>Illustrative — the harness already writes the word; only the engine-side lookup is missing.</figcaption>
+    </figure>
+  </article>
+
+  <article class="idea" id="idea-2">
+    <div class="idea-head"><span class="rank">2.</span><h3>Cash In world.width: camera-follow + wide worlds</h3></div>
+    <div class="chips"><span class="chip axis">world-structure</span><span class="chip conf">Confidence 90%</span><span class="chip cx">Complexity Low</span></div>
+    <dl class="fields">
+      <dt>Description</dt>
+      <dd>Wire the schema's existing <code>world.width</code>/<code>world.height</code> to real Phaser camera bounds with follow-the-player, and scale the block coordinate ranges (currently clamped to literal 800/480) to the world's size. The harness can then author worlds several screens wide — a journey with an intro, an obstacle field, a climb, a goal not visible from spawn — using the same layout data it writes today.</dd>
+      <dt>Basis</dt>
+      <dd><code>direct:</code> the schema validates any positive width (<code>environmentSchema.ts:55-60</code>), <code>boot.ts:3-4</code> hardcodes <code>GAME_WIDTH = 800</code>, the sole camera call in the entire scene is <code>setBackgroundColor</code> (<code>PlatformerScene.ts:131</code>), and block X/Y fields carry the literals <code>max: 800</code>/<code>480</code> (<code>definitions.ts:130-145</code>). Five of five ideation frames independently converged here.</dd>
+      <dt>Rationale</dt>
+      <dd>Cheapest wonder-per-line-of-code in the candidate set: scale is the most visceral "wow" a generated world can deliver, and the schema contract already promises it. It also fixes a latent bug — a harness writing <code>width: 4000</code> today gets a silently broken world, not a validation error — and it is the prerequisite for idea 3.</dd>
+      <dt>Downsides</dt>
+      <dd>Block coordinate semantics become world-relative (a small breaking change to saved projects and e2e fixtures); level design across multiple screens raises the bar on harness layout quality (reachability mistakes get more room to hide).</dd>
+    </dl>
+    <figure>
+      <svg viewBox="0 0 720 150" role="img" aria-label="Before and after: single fixed screen versus wide world with camera window">
+        <rect x="10" y="30" width="200" height="90" rx="6" fill="#1c2330" stroke="#2a3342"/>
+        <text x="110" y="22" text-anchor="middle" fill="#8b98a9" font-size="11">today: world = screen (800×480)</text>
+        <circle cx="50" cy="100" r="7" fill="#58e0a0"/>
+        <rect x="80" y="88" width="40" height="8" fill="#2a3342"/>
+        <rect x="140" y="65" width="40" height="8" fill="#2a3342"/>
+        <rect x="280" y="30" width="430" height="90" rx="6" fill="#1c2330" stroke="#2a3342"/>
+        <text x="495" y="22" text-anchor="middle" fill="#8b98a9" font-size="11">wired: world.width = 3200, camera follows the player</text>
+        <circle cx="330" cy="100" r="7" fill="#58e0a0"/>
+        <rect x="360" y="88" width="36" height="8" fill="#2a3342"/>
+        <rect x="420" y="70" width="36" height="8" fill="#2a3342"/>
+        <rect x="480" y="52" width="36" height="8" fill="#2a3342"/>
+        <rect x="560" y="80" width="36" height="8" fill="#2a3342"/>
+        <rect x="640" y="60" width="36" height="8" fill="#2a3342"/>
+        <rect x="300" y="38" width="130" height="74" rx="4" fill="none" stroke="#e0b558" stroke-dasharray="5 4"/>
+        <text x="365" y="140" text-anchor="middle" fill="#ecc97e" font-size="11">camera window</text>
+      </svg>
+      <figcaption>Illustrative — from diorama to place; the dashed window travels with the player.</figcaption>
+    </figure>
+  </article>
+
+  <article class="idea" id="idea-3">
+    <div class="idea-head"><span class="rank">3.</span><h3>Multi-Level Campaigns: one program, many stages</h3></div>
+    <div class="chips"><span class="chip axis">world-structure</span><span class="chip conf">Confidence 80%</span><span class="chip cx">Complexity Medium</span></div>
+    <dl class="fields">
+      <dt>Description</dt>
+      <dd>Add a <code>levels[]</code> array to the schema — each entry a full layout — with goal-touch advancing to the next stage. The harness generates an arc ("Candy Forest → Candy Castle → Candy Factory") from one prompt; the kid's single block program travels with them and must survive each stage's new layout. Reuses the shipped atomic teardown/rebuild (<code>setEnvironment()</code> → <code>buildWorld()</code>) and the workspace-autosave-before-swap machinery — the hardest part is already battle-tested as harness hot-reload.</dd>
+      <dt>Basis</dt>
+      <dd><code>direct:</code> full explicit teardown and rebuild on every environment write (<code>PlatformerScene.ts:80-130</code>), verified. <code>external:</code> Super Mario Maker 2's World mode — world-level structure (ordering, difficulty curve) as a separable authoring layer from per-level logic.</dd>
+      <dt>Rationale</dt>
+      <dd>Multi-level structure is what makes a generated game stop feeling like a demo and start feeling like <em>a game</em> — and it deepens the kid's role rather than diluting it: one program tested against escalating layouts is generalisation, the heart of programming. It also gives the final "win at the goal" challenge somewhere to go.</dd>
+      <dt>Downsides</dt>
+      <dd>An open design call the team must make: is advancement engine behaviour or a kid-programmable "go to next level" block? Per-level state (score carryover, lives) needs decisions; harness generation cost per prompt grows with level count.</dd>
+    </dl>
+    <figure>
+      <svg viewBox="0 0 720 120" role="img" aria-label="One block program traveling across three levels">
+        <defs><marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#6ab0f3"/></marker></defs>
+        <rect x="30" y="14" width="180" height="34" rx="8" fill="#14231d" stroke="#58e0a0"/>
+        <text x="120" y="35" text-anchor="middle" fill="#7ee8b6" font-size="12">the kid's block program</text>
+        <rect x="60" y="70" width="150" height="40" rx="6" fill="#1c2330" stroke="#2a3342"/>
+        <text x="135" y="94" text-anchor="middle" fill="#d8e0ea" font-size="12">Candy Forest</text>
+        <rect x="285" y="70" width="150" height="40" rx="6" fill="#1c2330" stroke="#2a3342"/>
+        <text x="360" y="94" text-anchor="middle" fill="#d8e0ea" font-size="12">Candy Castle</text>
+        <rect x="510" y="70" width="150" height="40" rx="6" fill="#1c2330" stroke="#2a3342"/>
+        <text x="585" y="94" text-anchor="middle" fill="#d8e0ea" font-size="12">Candy Factory</text>
+        <line x1="210" y1="90" x2="280" y2="90" stroke="#6ab0f3" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <text x="245" y="80" text-anchor="middle" fill="#8cc3f7" font-size="10">goal ⚑</text>
+        <line x1="435" y1="90" x2="505" y2="90" stroke="#6ab0f3" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <text x="470" y="80" text-anchor="middle" fill="#8cc3f7" font-size="10">goal ⚑</text>
+        <line x1="120" y1="48" x2="130" y2="66" stroke="#58e0a0" stroke-width="1.2" marker-end="url(#ar1)"/>
+        <line x1="200" y1="42" x2="352" y2="66" stroke="#58e0a0" stroke-width="1.2" marker-end="url(#ar1)"/>
+        <line x1="210" y1="30" x2="578" y2="66" stroke="#58e0a0" stroke-width="1.2" marker-end="url(#ar1)"/>
+      </svg>
+      <figcaption>Illustrative — harness authors the arc; one kid-authored program runs in every stage.</figcaption>
+    </figure>
+  </article>
+
+  <article class="idea" id="idea-4">
+    <div class="idea-head"><span class="rank">4.</span><h3>The Seam Doctrine: inert practicals + minted event blocks</h3></div>
+    <div class="chips"><span class="chip axis">mechanics-genre</span><span class="chip conf">Confidence 70%</span><span class="chip cx">Complexity High</span></div>
+    <dl class="fields">
+      <dt>Description</dt>
+      <dd>A design principle plus the architecture that enforces it: <em>the harness authors nouns; the kid authors verbs; every generated mechanism ships inert.</em> The harness places named, stateful props — a gate (open/closed), a lever, an oven, a wobbly bridge, a named trigger zone ("the dragon's cave") — none of which do anything. Each named thing projects a block into the kid's toolbox: "when you touch <b>the lever</b>", "open <b>the gate</b>", "when you enter <b>the dragon's cave</b>". The toolbox is already built from plain data (<code>toolbox.ts</code>), so world-specific blocks are data plumbing, not new architecture. The wonder moment is opening the toolbox and finding blocks named after your own idea — and nothing in the world moves until the kid wires it.</dd>
+      <dt>Basis</dt>
+      <dd><code>direct:</code> the pattern already exists in single form — enemies with <code>"speed": 0</code> stand still until the child's blocks start them (HARNESS.md, load-bearing for challenge 5), and the touch seam is a two-value union ready to widen (<code>TouchKind = 'enemy' | 'goal'</code>, <code>gameApi.ts:5</code>). <code>external:</code> theatre "practicals" plus D&amp;D keyed encounters; Dreams' logic chips prove composable logic-on-placed-objects is learnable by children.</dd>
+      <dt>Rationale</dt>
+      <dd>This is the strategic centerpiece: it makes the kid-agency boundary <em>structural</em> rather than policed, and it is the exact inverse of the field's failure mode (Rosebud/Astrocade collapse logic into the AI). Generation richness and the kid's programming surface grow in lockstep — the more cast and machinery the harness invents, the more there is to program. It is the natural successor to KTD9.</dd>
+      <dt>Downsides</dt>
+      <dd>The biggest lift in the set: prop state machines, dynamic block minting, save/load of world-specific programs, and challenge checks that can reference named things. Needs guardrails so the vocabulary stays small enough for a 6-year-old's toolbox. The adversarial pass flagged one inherited risk: keep the harness's table to <em>event names only</em> — consequence rules in data would quietly cross the behaviour boundary (the PuzzleScript trap).</dd>
+    </dl>
+    <figure>
+      <svg viewBox="0 0 720 190" role="img" aria-label="Harness authors inert nouns; toolbox mints blocks; kid wires consequences">
+        <defs><marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#58e0a0"/></marker></defs>
+        <text x="120" y="24" text-anchor="middle" fill="#8b98a9" font-size="11">harness writes (data)</text>
+        <rect x="30" y="34" width="180" height="120" rx="8" fill="#1c2330" stroke="#2a3342"/>
+        <text x="120" y="58" text-anchor="middle" fill="#d8e0ea" font-size="12">"the gate" · closed</text>
+        <text x="120" y="80" text-anchor="middle" fill="#d8e0ea" font-size="12">"the lever"</text>
+        <text x="120" y="102" text-anchor="middle" fill="#d8e0ea" font-size="12">"the oven"</text>
+        <text x="120" y="124" text-anchor="middle" fill="#d8e0ea" font-size="12">"the dragon's cave"</text>
+        <text x="120" y="146" text-anchor="middle" fill="#8b98a9" font-size="10">all inert — nothing moves</text>
+        <line x1="210" y1="94" x2="265" y2="94" stroke="#58e0a0" stroke-width="1.5" marker-end="url(#ar4)"/>
+        <text x="360" y="24" text-anchor="middle" fill="#8b98a9" font-size="11">toolbox mints (auto)</text>
+        <rect x="270" y="34" width="180" height="120" rx="8" fill="#101c2a" stroke="#2a3342"/>
+        <text x="360" y="62" text-anchor="middle" fill="#8cc3f7" font-size="11">when you touch [the lever]</text>
+        <text x="360" y="88" text-anchor="middle" fill="#8cc3f7" font-size="11">open [the gate]</text>
+        <text x="360" y="114" text-anchor="middle" fill="#8cc3f7" font-size="11">when you enter [the cave]</text>
+        <text x="360" y="140" text-anchor="middle" fill="#8b98a9" font-size="10">named after the kid's idea</text>
+        <line x1="450" y1="94" x2="505" y2="94" stroke="#58e0a0" stroke-width="1.5" marker-end="url(#ar4)"/>
+        <text x="600" y="24" text-anchor="middle" fill="#8b98a9" font-size="11">kid wires (behaviour)</text>
+        <rect x="510" y="34" width="180" height="120" rx="8" fill="#14231d" stroke="#58e0a0"/>
+        <text x="600" y="72" text-anchor="middle" fill="#7ee8b6" font-size="11">touch lever → open gate</text>
+        <text x="600" y="98" text-anchor="middle" fill="#7ee8b6" font-size="11">enter cave → play "zap"</text>
+        <text x="600" y="124" text-anchor="middle" fill="#7ee8b6" font-size="11">…every consequence, theirs</text>
+        <text x="360" y="178" text-anchor="middle" fill="#8b98a9" font-size="11">nouns flow right; verbs are authored only in the rightmost box</text>
+      </svg>
+      <figcaption>Illustrative — the seam that none of the prompt-to-game competitors have.</figcaption>
+    </figure>
+  </article>
+
+  <article class="idea" id="idea-5">
+    <div class="idea-head"><span class="rank">5.</span><h3>Feel-as-Data: physics profile, atmosphere list, audio palette</h3></div>
+    <div class="chips"><span class="chip axis">mechanics-genre</span><span class="chip conf">Confidence 85%</span><span class="chip cx">Complexity Low</span></div>
+    <dl class="fields">
+      <dt>Description</dt>
+      <dd>Three small schema extensions that follow the theme system's proven pattern (expose parametric knobs; engine realizes them): a <code>world.physics</code> block (gravity, jump strengths, speed cap) so "moon base" floats and "underwater" drifts; an <code>atmosphere</code> list from an engine vocabulary (snow, fireflies, embers, stars, bubbles, parallax layers, time-of-day gradient) replacing the two-value weather enum and the permanently cheerful hardcoded sun; and an audio palette exposing the oscillator parameters behind the five fixed beeps so a ninja world <em>sounds</em> different from a bakery. Same 15 blocks, wildly different feel per prompt.</dd>
+      <dt>Basis</dt>
+      <dd><code>direct:</code> <code>gravity: { x: 0, y: 900 }</code> hardcoded (<code>boot.ts:16</code>); <code>weather: z.enum(['clear','rain'])</code> is the only ambient dynamic; <code>sounds.ts</code> is exactly five hardcoded <code>{freq, duration, type}</code> presets and its own comment says the harness can only re-map names. All verified.</dd>
+      <dt>Rationale</dt>
+      <dd>Two different prompts currently produce mechanically and sonically identical games wearing different paint — this is the gap between "themed" and "different." Highest perceived-variety return per schema line in the set, shippable in slices, and every slice widens what ideas 1–4 can express.</dd>
+      <dt>Downsides</dt>
+      <dd>Physics values interact with layout reachability (a floaty world changes which gaps are jumpable) — the harness needs guidance ranges; atmosphere vocabulary needs curation to stay performant on modest hardware.</dd>
+    </dl>
+  </article>
+
+  <article class="idea" id="idea-6">
+    <div class="idea-head"><span class="rank">6.</span><h3>Bespoke Challenge Arcs: parameterized checks + genre packs</h3></div>
+    <div class="chips"><span class="chip axis">kid-surface</span><span class="chip conf">Confidence 80%</span><span class="chip cx">Complexity Medium</span></div>
+    <dl class="fields">
+      <dt>Description</dt>
+      <dd>Give the harness a small vocabulary of parameterized, composable check templates — <code>collect_n {count}</code>, <code>score_reaches {n}</code>, <code>survive {seconds}</code>, <code>reach_zone {zone}</code> — so it can compose a bespoke challenge arc per prompt ("catch 5 fish before the cat-nap timer!") instead of re-skinning the fixed 7-challenge platformer arc. Bundle check sets + challenge sequences + toolbox-unlock orders into swappable <em>genre packs</em> ("collector", "dodge", "escape") the harness selects at intake. Completion detection stays deterministic, offline, and engine-owned.</dd>
+      <dt>Basis</dt>
+      <dd><code>direct:</code> the extension point already exists unused — <code>checks.ts:7</code> types every check as <code>(state, params: Record&lt;string, number&gt;) =&gt; boolean</code> with <code>params.minNew ?? 1</code> already in use, and the file header states the design intent: "adding a genre means adding predicates, not changing the engine." Verified verbatim. <code>external:</code> board-game victory-condition cards; Bitsy/PuzzleScript's small-primitives-over-schema-breadth evidence.</dd>
+      <dt>Rationale</dt>
+      <dd>The challenge arc is the app's pedagogical spine and currently its most genre-locked part — the harness may rewrite the words but not the goals. To a six-year-old, "a more impressive game" mostly means <em>the goals match my idea</em>. This also unlocks the harness authoring challenges 8, 9, 10… once the arc is data all the way down.</dd>
+      <dt>Downsides</dt>
+      <dd>Predicate vocabulary needs careful curation (too expressive and it becomes logic-in-data; too narrow and arcs feel same-y); the fixed 7-arc's carefully tuned teaching progression is easy to lose — packs need the same pedagogical care the original arc got.</dd>
+    </dl>
+  </article>
+
+  <article class="idea" id="idea-7">
+    <div class="idea-head"><span class="rank">7.</span><h3>The Conversational Harness: intake interview + Yes-And snapshots</h3></div>
+    <div class="chips"><span class="chip axis">pipeline-harness</span><span class="chip conf">Confidence 70%</span><span class="chip cx">Complexity Medium</span></div>
+    <dl class="fields">
+      <dt>Description</dt>
+      <dd>Widen both ends of the signal pipe. <strong>Before generating:</strong> the harness asks 3–4 kid-level questions ("What should your dragon be scared of?") over the existing message channels, then generates with 10× the signal — a six-year-old's raw prompt is often a few words. <strong>After playing:</strong> implement the reserved <code>progress_snapshot</code> outbox message carrying what the kid actually built and did (RuntimeStats already accumulates it), so the harness's next world <em>canonizes their play</em> — the bridge they always build becomes a permanent golden bridge; collectibles seed along their favourite jump arc. Improv's first rule, applied to world generation.</dd>
+      <dt>Basis</dt>
+      <dd><code>direct:</code> both message directions already exist in the contract (<code>message</code> in, <code>free_request</code> out — <code>messages.ts</code>), and <code>messages.ts:6-8</code> reserves the <code>progress_snapshot</code> type, "deferred from v1 (no producer or consumer)" — verified word-for-word. <code>reasoned:</code> generation quality is bounded by input signal; the kid's prompt is the narrowest pipe in the system, so widening it outperforms widening any downstream schema.</dd>
+      <dt>Rationale</dt>
+      <dd>Every other idea raises the ceiling on what generation can express; this one raises the floor on what generation <em>knows</em> — and a world that visibly responds to the kid's own play is a form of agency none of the surveyed competitors offer. It also makes the kid feel interviewed-as-designer rather than served-by-a-machine.</dd>
+      <dt>Downsides</dt>
+      <dd>Adds latency and a live-harness dependency to the first-run experience (the interview needs the agent present); snapshot schema design decides how much the harness can see. A genuine product fork rides with this idea: generation as an ongoing <em>session</em> (this) vs a one-shot <em>event</em> (the rejected-but-real "World Pack" — generate everything at intake, then no harness needed). The team should pick a lane deliberately.</dd>
+    </dl>
+    <figure>
+      <svg viewBox="0 0 720 170" role="img" aria-label="Loop: idea, interview, generate, play, snapshot, respond">
+        <defs><marker id="ar7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#6ab0f3"/></marker></defs>
+        <rect x="20" y="60" width="120" height="44" rx="8" fill="#1c2330" stroke="#2a3342"/>
+        <text x="80" y="86" text-anchor="middle" fill="#d8e0ea" font-size="12">kid's idea</text>
+        <rect x="185" y="60" width="130" height="44" rx="8" fill="#101c2a" stroke="#2a3342"/>
+        <text x="250" y="79" text-anchor="middle" fill="#8cc3f7" font-size="12">interview</text>
+        <text x="250" y="95" text-anchor="middle" fill="#8b98a9" font-size="10">3–4 questions</text>
+        <rect x="360" y="60" width="130" height="44" rx="8" fill="#14231d" stroke="#2a3342"/>
+        <text x="425" y="86" text-anchor="middle" fill="#7ee8b6" font-size="12">generate world</text>
+        <rect x="535" y="60" width="130" height="44" rx="8" fill="#1c2330" stroke="#58e0a0"/>
+        <text x="600" y="79" text-anchor="middle" fill="#d8e0ea" font-size="12">kid plays &amp;</text>
+        <text x="600" y="95" text-anchor="middle" fill="#d8e0ea" font-size="12">programs</text>
+        <line x1="140" y1="82" x2="180" y2="82" stroke="#6ab0f3" stroke-width="1.5" marker-end="url(#ar7)"/>
+        <line x1="315" y1="82" x2="355" y2="82" stroke="#6ab0f3" stroke-width="1.5" marker-end="url(#ar7)"/>
+        <line x1="490" y1="82" x2="530" y2="82" stroke="#6ab0f3" stroke-width="1.5" marker-end="url(#ar7)"/>
+        <path d="M 600 104 L 600 138 L 425 138 L 425 109" fill="none" stroke="#e0b558" stroke-width="1.5" marker-end="url(#ar7)"/>
+        <text x="512" y="153" text-anchor="middle" fill="#ecc97e" font-size="11">progress_snapshot → next world canonizes their play</text>
+      </svg>
+      <figcaption>Illustrative — the loop closes: what the kid builds shapes what gets generated next.</figcaption>
+    </figure>
+  </article>
+
+  <div class="callout">
+    <div class="eyebrow">how these compose</div>
+    <p style="margin:0.4rem 0 0;">Ideas 1, 2, 3 and 5 are content-only schema extensions that stack into one coherent "environment schema v2" milestone; idea 4 is the architecture that keeps the kid's agency structural as that richness grows; ideas 6 and 7 make the arc and the loop as generative as the world. The safe sequencing bet: 2 → 1 (stage one) → 5, which are each days-not-weeks, then decide between 3, 4, and 6 as the first big swing.</p>
+  </div>
+</section>
+
+<section id="rejection-summary">
+  <h2>Rejection Summary</h2>
+  <p style="color:var(--muted); font-size:0.9rem;">~38 raw ideas from 5 frames → 23 merged candidates + 4 syntheses → adversarial verification (every cited quote checked against the repo; none fabricated) → 7 survivors. All five axes have survivors.</p>
+  <table>
+    <tr><th>#</th><th>Idea</th><th>Reason rejected</th></tr>
+    <tr><td>1</td><td>Harness-drawn pixel bitmap sprites</td><td>Unproven premise — a text LLM reliably emitting recognizable pixel grids is a bet, not evidence; idea 1 reaches the goal deterministically.</td></tr>
+    <tr><td>2</td><td>Harness-assigned behaviour tags (icy, deadly, crumbling…)</td><td>Boundary risk — tags bake in consequences with no kid block required; the safe form lives inside idea 4's ships-inert doctrine.</td></tr>
+    <tr><td>3</td><td>Full second genre chassis (top-down, flappy)</td><td>Sound basis (the schema comments invite it) but the expensive form; folded into ideas 5+6, revisit after the seam doctrine lands.</td></tr>
+    <tr><td>4</td><td>Interaction grid (collision outcomes as a harness-written rule table)</td><td>PuzzleScript analogy undercuts its own safety claim — rule tables are logic-in-data; the safe core (named events → kid blocks) survives in idea 4.</td></tr>
+    <tr><td>5</td><td>The Parts Box (kids compose new entity kinds)</td><td>Sound but far-horizon — depends on ideas 1, 4, 5 landing first; noted as the destination they build toward.</td></tr>
+    <tr><td>6</td><td>Recipe-and-expand layout generation</td><td>Moves the creative work from the AI to an engine algorithm, cutting against "impressive from the prompt"; revisit if layout-reachability bugs dominate.</td></tr>
+    <tr><td>7</td><td>Environment corpus (reuse validated worlds across kids)</td><td>Mechanism has no code basis yet; retrieval relevance and cross-kid data questions unaddressed.</td></tr>
+    <tr><td>8</td><td>environment_patch (merge-patch bridge envelope)</td><td>Real fragility fix but infrastructure QoL — below the "more impressive games" bar; rides along any schema v2 work.</td></tr>
+    <tr><td>9</td><td>World Pack (one-shot generation, no live harness)</td><td>A genuine product fork, not a standalone feature — carried inside idea 7's downsides as the session-vs-event decision.</td></tr>
+    <tr><td>10</td><td>Wish Button (free_request as in-game item)</td><td>Duplicates the already-shipped Game Wizard box.</td></tr>
+  </table>
+</section>
+
+<footer class="composition-signal">Composed 2026-08-19 by ce-ideate (run a3f81c92) from the kids-game-dev repo grounding + 5-frame ideation fleet + adversarial verification.</footer>
+
+</div>
+</body>
+</html>

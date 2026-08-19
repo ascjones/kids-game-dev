@@ -1,14 +1,18 @@
 import { expect, test, type Page } from '@playwright/test';
 import { bootToWorkbench, cleanBridge, outboxFiles, playProgram, PROGRAMS } from './helpers';
 
-// The release-gate playthrough (DoD): all six challenges completed in the
-// browser with block programs, each ending in its kid-language explanation.
+// The release-gate playthrough (DoD): every challenge completed in the browser
+// with block programs, each ending in its kid-language explanation.
 
 test.beforeEach(() => cleanBridge());
 
-async function expectCompletedAndAdvance(page: Page, explanationBit: string): Promise<void> {
+async function expectCompletedAndAdvance(
+  page: Page,
+  explanationBit: string,
+  timeout = 20_000,
+): Promise<void> {
   await expect(page.locator('#challenge-panel .explanation')).toContainText(explanationBit, {
-    timeout: 20_000,
+    timeout,
   });
   await page.getByRole('button', { name: 'Next challenge →' }).click();
 }
@@ -50,15 +54,20 @@ test('all challenges are completable with blocks only', async ({ page }) => {
 
   // 7. Win at the goal flag
   await playProgram(page, PROGRAMS.winAtGoal);
-  await expect(page.locator('#challenge-panel .explanation')).toContainText('YOU WIN', {
-    timeout: 20_000,
-  });
-  await page.getByRole('button', { name: 'Next challenge →' }).click();
+  await expectCompletedAndAdvance(page, 'YOU WIN');
+
+  // 8. The great journey: the same winning program, but the challenge brings a
+  // world three screens wide, so reaching the flag now needs the camera to
+  // travel with the player.
+  await expect(page.locator('#challenge-panel')).toContainText('Go on a great journey!');
+  // Three screens at the program's own running speed is a long way, so this one
+  // gets room to finish the trip.
+  await expectCompletedAndAdvance(page, 'ran across a world three screens wide', 45_000);
 
   // Free play unlocks the whole toolbox, and every completion reached the bridge.
   await expect(page.locator('#challenge-panel')).toContainText('finished every challenge');
   await expect(() => {
-    expect(outboxFiles('challenge_completed')).toHaveLength(7);
+    expect(outboxFiles('challenge_completed')).toHaveLength(8);
   }).toPass();
 });
 

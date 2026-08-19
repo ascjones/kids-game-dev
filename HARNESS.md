@@ -50,7 +50,23 @@ zod). A malformed file does not break the app: it degrades to a kid-language
 notice plus the bundled starter world — but the child loses your world, so
 don't ship one. Rules of thumb:
 
-- World is 800×480. `y` grows downward. Keep the player spawn above a platform.
+- The screen is 800×480, but the world may be bigger: set `world.width` /
+  `world.height` up to a **maximum of 4800×2880** (six screens per axis). A
+  world beyond that fails validation and degrades to the starter world. The
+  camera follows the player, so a world larger than one screen scrolls.
+- `y` grows downward. Keep the player spawn above a platform.
+- Layout coordinates (`platforms`, `collectibles`, `enemies`, `goal`, the
+  player `spawn`) are **world-absolute** — an object at `x: 3200` sits four
+  screens to the right, off-screen until the camera gets there. Only the
+  child's block-program spawns are **view-relative**: they appear relative to
+  whatever the camera is showing, so don't try to pre-place things for the
+  child's blocks.
+- **Reachability**: every collectible and the goal must be reachable by
+  running and jumping from the spawn. A jump clears roughly **150px
+  vertically** at default strength, so keep platform-to-platform climbs under
+  that and leave no gaps wider than a running jump. In a wide world, lay a
+  connected trail of platforms from spawn to goal — nothing should require
+  the child to leap into the void on faith.
 - Colors are `#rrggbb`. `theme` recolors everything, so re-theming alone is a
   cheap, big win for matching the child's idea.
 - Enemies with `"speed": 0` stand still until the child's blocks start them
@@ -63,6 +79,15 @@ don't ship one. Rules of thumb:
 may rewrite prompts, hints, and explanations to match the child's theme, but
 keep the six `check` names and their order — completion detection is in-app
 code keyed by those names.
+
+A challenge may also carry its own world: an optional `environment` field
+holding a complete environment object (same schema as `environment.json`). The
+app swaps that world in the first time the child reaches that challenge, and
+never again — later edits by the child or by you are safe. Two rules: the
+embedded world must pass the environment schema (a broken one throws away the
+whole challenges file, not just that challenge), and once a child is living on
+a challenge-carried world, that world survives reloads even if you rewrite
+`environment.json` — send `environment_updated` to change it.
 
 ## What you never do
 
