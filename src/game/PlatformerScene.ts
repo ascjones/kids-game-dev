@@ -112,6 +112,30 @@ export class PlatformerScene extends Phaser.Scene implements GameBackend {
     return this.runtime !== null;
   }
 
+  /**
+   * Read-only positions the acceptance tests assert on, behind the dev-only
+   * `window.__kidGame` seam in main.ts. Camera scroll and sprite world
+   * coordinates are the whole subject of the scrolling behaviours, and nothing
+   * else can observe them from outside Phaser.
+   */
+  debugSnapshot(): {
+    camera: { scrollX: number; scrollY: number };
+    world: { width: number; height: number };
+    player: { x: number; y: number };
+    platforms: Array<{ x: number; y: number }>;
+  } {
+    const camera = this.cameras.main;
+    return {
+      camera: { scrollX: camera.scrollX, scrollY: camera.scrollY },
+      world: { ...this.environment.world },
+      player: { x: this.player.x, y: this.player.y },
+      platforms: (this.platforms.getChildren() as Phaser.Physics.Arcade.Sprite[]).map((sprite) => ({
+        x: sprite.x,
+        y: sprite.y,
+      })),
+    };
+  }
+
   private buildWorld(): void {
     const env = this.environment;
     // Explicit teardown: destroying each object also removes its physics body;

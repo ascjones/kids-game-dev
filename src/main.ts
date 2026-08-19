@@ -480,6 +480,9 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
       },
       currentChallengeId: () => engine.current()?.id ?? null,
       getCode: () => editor.getCode(),
+      // Camera scroll, world size and sprite world coordinates — the scrolling
+      // behaviours are invisible from the DOM, so the specs read them here.
+      snapshot: () => scene.debugSnapshot(),
     };
   }
 }
