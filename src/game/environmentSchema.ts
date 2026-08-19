@@ -52,10 +52,12 @@ export const environmentSchema = z.object({
   title: z.string().default('My Game'),
   genre: z.string().default('platformer'),
   theme: themeSchema.prefault({}),
+  // Bounded at six screens per axis (KTD3): an oversized world fails loudly
+  // into the kid-language fallback instead of rendering broken.
   world: z
     .object({
-      width: z.number().positive().default(800),
-      height: z.number().positive().default(480),
+      width: z.number().positive().max(4800).default(800),
+      height: z.number().positive().max(2880).default(480),
     })
     .prefault({}),
   player: z.object({
