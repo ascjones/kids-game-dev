@@ -1,7 +1,18 @@
+import * as fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { CHALLENGES_FALLBACK_MESSAGE, loadChallengesFromData } from './loader';
 import { starterChallenges } from './starterChallenges';
+import { challengeFileSchema } from './types';
 import { starterEnvironment } from '../game/starterEnvironment';
+
+const HARNESS_CHALLENGES_FILE = fileURLToPath(
+  new URL('../../game/environment/challenges.json', import.meta.url),
+);
+
+function readHarnessChallenges(): unknown {
+  return JSON.parse(fs.readFileSync(HARNESS_CHALLENGES_FILE, 'utf8'));
+}
 
 function challengeFile(environment?: unknown) {
   return {
@@ -20,6 +31,30 @@ function challengeFile(environment?: unknown) {
     ],
   };
 }
+
+describe('the bundled arc and its harness mirror', () => {
+  it('the bundled arc parses against the challenge schema, embedded worlds and all', () => {
+    const parsed = challengeFileSchema.safeParse({ version: 1, challenges: starterChallenges });
+    expect(parsed.error?.issues ?? []).toEqual([]);
+    expect(parsed.success).toBe(true);
+  });
+
+  it('the harness mirror loads and says exactly what the bundled arc says', () => {
+    // The two copies must not drift: challenges.json is the harness-editable
+    // mirror of starterChallenges, and a child running from either gets the
+    // same arc (R9 offline, R15 fallback).
+    const result = loadChallengesFromData(readHarnessChallenges());
+    expect(result.source).toBe('loaded');
+    expect(result.challenges).toEqual(starterChallenges);
+  });
+
+  it('the journey world in the harness mirror is the wide one too', () => {
+    const result = loadChallengesFromData(readHarnessChallenges());
+    const journey = result.challenges.at(-1);
+    expect(journey?.id).toBe('great-journey');
+    expect(journey?.environment?.world.width).toBe(2400);
+  });
+});
 
 describe('challenge-carried environments in harness data (KTD4)', () => {
   it('carries a valid embedded world through to the challenge', () => {

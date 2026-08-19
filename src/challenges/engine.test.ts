@@ -209,6 +209,140 @@ describe('challenge-carried environments (KTD4)', () => {
   });
 });
 
+describe('the great journey, appended to the arc (R9/R10)', () => {
+  const SCREEN_WIDTH = 800;
+  /** The seven challenges the arc shipped with before the journey was added. */
+  const ORIGINAL_SEVEN = [
+    'add-platform',
+    'make-jump',
+    'learn-to-run',
+    'add-star',
+    'score-points',
+    'enemy-patrol',
+    'win-condition',
+  ];
+
+  function savedAfterTheOriginalSeven() {
+    // A save written when the arc ended at 'win-condition': index pointed past
+    // the end (free play). The completed ids are the durable truth.
+    return { completedIds: [...ORIGINAL_SEVEN], currentIndex: 7, hintStages: {} };
+  }
+
+  it('leaves the original seven challenges first and in order, still world-free', () => {
+    expect(starterChallenges.slice(0, 7).map((c) => c.id)).toEqual(ORIGINAL_SEVEN);
+    expect(starterChallenges.slice(0, 7).map((c) => c.environment)).toEqual(
+      ORIGINAL_SEVEN.map(() => undefined),
+    );
+  });
+
+  it('a save from the seven-challenge arc reopens on the journey instead of free play', () => {
+    const engine = new ChallengeEngine(starterChallenges, savedAfterTheOriginalSeven());
+    expect(engine.allDone()).toBe(false);
+    expect(engine.current()?.id).toBe('great-journey');
+    expect(engine.currentCompleted()).toBe(false);
+  });
+
+  it('offers a world wider than the screen with the flag beyond the first screen', () => {
+    // AE5: fresh state, no harness — the world comes from bundled data alone.
+    const engine = new ChallengeEngine(starterChallenges, savedAfterTheOriginalSeven());
+    const world = engine.pendingEnvironment();
+    expect(world).not.toBeNull();
+    expect(world?.world.width).toBe(2400);
+    expect(world?.world.height).toBe(480);
+    // Spawn on screen one, flag on screen three: winning means travelling.
+    expect(world?.player.spawn.x).toBeLessThan(SCREEN_WIDTH);
+    expect(world?.goal?.x).toBeGreaterThan(2 * SCREEN_WIDTH);
+    expect(engine.current()?.check).toBe('win_triggered');
+  });
+
+  it('lays terrain and treasure on all three screens, not just the first', () => {
+    const engine = new ChallengeEngine(starterChallenges, savedAfterTheOriginalSeven());
+    const world = engine.pendingEnvironment();
+    for (const screen of [0, 1, 2]) {
+      const from = screen * SCREEN_WIDTH;
+      const to = from + SCREEN_WIDTH;
+      const onScreen = (x: number) => x >= from && x < to;
+      expect(world?.platforms.filter((p) => onScreen(p.x)).length ?? 0).toBeGreaterThan(0);
+      expect(world?.collectibles.filter((c) => onScreen(c.x)).length ?? 0).toBeGreaterThan(0);
+    }
+  });
+
+  it('lays a walkable, jumpable trail: nothing in the world strands the child', () => {
+    // Physics the world is designed against: gravity 900, jump 520 (a ~150px
+    // climb), run 200px/s, player 32x44, star 28x28, flag 46x60. Sprites are
+    // positioned by their centre.
+    const PLAYER_HEIGHT = 44;
+    const MAX_JUMP_RISE = 150;
+    const MAX_JUMP_RUN = 180; // conservative slice of a full running jump
+    const GROUND_TOP = 440;
+    const HEAD_ROOM = 20;
+
+    const world = new ChallengeEngine(
+      starterChallenges,
+      savedAfterTheOriginalSeven(),
+    ).pendingEnvironment();
+    const surfaces = (world?.platforms ?? []).map((p) => ({
+      top: p.y - p.height / 2,
+      bottom: p.y + p.height / 2,
+      left: p.x - p.width / 2,
+      right: p.x + p.width / 2,
+    }));
+    const ground = surfaces.filter((s) => s.top === GROUND_TOP).sort((a, b) => a.left - b.left);
+
+    // The ground runs unbroken from one end of the world to the other, so
+    // 'hold right' always works and a missed jump never costs the journey.
+    expect(ground[0].left).toBe(0);
+    expect(ground.at(-1)?.right).toBe(world?.world.width);
+    for (const [i, slab] of ground.slice(1).entries()) {
+      expect(slab.left).toBeLessThanOrEqual(ground[i].right);
+    }
+
+    for (const ledge of surfaces.filter((s) => s.top !== GROUND_TOP)) {
+      // A ledge low enough to clip a running player's head would stop the
+      // journey dead, so every one hangs clear above it.
+      expect(ledge.bottom).toBeLessThanOrEqual(GROUND_TOP - PLAYER_HEIGHT - HEAD_ROOM);
+      // ...and every one is a jump away from some surface below it.
+      const launchable = surfaces.some((from) => {
+        const rise = from.top - ledge.top;
+        const gap = Math.max(0, ledge.left - from.right, from.left - ledge.right);
+        return rise > 0 && rise <= MAX_JUMP_RISE && gap <= MAX_JUMP_RUN;
+      });
+      expect({ ledge, launchable }).toMatchObject({ launchable: true });
+    }
+
+    // Every star is collected just by standing on a surface under it.
+    for (const star of world?.collectibles ?? []) {
+      const standing = surfaces.some(
+        (s) =>
+          star.x >= s.left &&
+          star.x <= s.right &&
+          star.y + 14 >= s.top - PLAYER_HEIGHT &&
+          star.y - 14 <= s.top,
+      );
+      expect({ star, standing }).toMatchObject({ standing: true });
+    }
+
+    // The flag is touched by running into it, no leap of faith required.
+    const goal = world?.goal;
+    expect(goal).toBeDefined();
+    expect(ground.some((s) => goal!.x >= s.left && goal!.x <= s.right)).toBe(true);
+    expect(goal!.y + 30).toBeGreaterThanOrEqual(GROUND_TOP - PLAYER_HEIGHT);
+    expect(goal!.y - 30).toBeLessThanOrEqual(GROUND_TOP);
+  });
+
+  it('applies the journey world once and then leaves the child alone', () => {
+    const engine = new ChallengeEngine(starterChallenges, savedAfterTheOriginalSeven());
+    engine.markEnvironmentApplied();
+    expect(engine.pendingEnvironment()).toBeNull();
+    expect(engine.progress().appliedEnvironmentChallengeId).toBe('great-journey');
+  });
+
+  it('opens the full toolbox, as the winning challenge before it did', () => {
+    const engine = new ChallengeEngine(starterChallenges, savedAfterTheOriginalSeven());
+    expect(engine.toolboxCategories()).toEqual(starterChallenges[6].toolbox);
+  });
+});
+
 describe('exactly-once completion emission', () => {
   it('evaluate returns completed exactly once per challenge across repeated play tests', () => {
     const engine = makeEngine();

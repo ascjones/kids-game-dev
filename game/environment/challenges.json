@@ -137,6 +137,219 @@
         "winning",
         "logic"
       ]
+    },
+    {
+      "id": "great-journey",
+      "title": "Go on a great journey!",
+      "prompt": "Your world just grew — it is three whole screens wide! Run right, past the edge of the screen, all the way to the goal flag at the far end.",
+      "hints": [
+        "Your world is bigger than the screen now. Hold the right arrow key and watch the world travel with you!",
+        "Follow the stars. They make a trail that leads all the way to the goal flag at the far end.",
+        "Try: when the right arrow key is pressed → move right. Keep \"when you touch the goal flag → you win the game!\" in your blocks, then run right until you find the flag!"
+      ],
+      "check": "win_triggered",
+      "params": {},
+      "explanation": "What a journey! You ran across a world three screens wide and won at the very end. Your game does not stop at the edge of the screen any more — the camera follows you wherever you go.",
+      "toolbox": [
+        "events",
+        "world",
+        "motion",
+        "sound",
+        "scoring",
+        "enemies",
+        "winning",
+        "logic"
+      ],
+      "environment": {
+        "version": 1,
+        "title": "The Great Journey",
+        "genre": "platformer",
+        "theme": {
+          "name": "Sunny Meadow",
+          "sky": "#87ceeb",
+          "platform": "#5cae4a",
+          "player": "#7c5cff",
+          "collectible": "#ffd23f",
+          "enemy": "#e0455a",
+          "goal": "#3fa9f5"
+        },
+        "world": {
+          "width": 2400,
+          "height": 480
+        },
+        "player": {
+          "spawn": {
+            "x": 100,
+            "y": 360
+          }
+        },
+        "platforms": [
+          {
+            "x": 400,
+            "y": 460,
+            "width": 800,
+            "height": 40
+          },
+          {
+            "x": 1200,
+            "y": 460,
+            "width": 800,
+            "height": 40
+          },
+          {
+            "x": 2000,
+            "y": 460,
+            "width": 800,
+            "height": 40
+          },
+          {
+            "x": 300,
+            "y": 360,
+            "width": 140,
+            "height": 24
+          },
+          {
+            "x": 560,
+            "y": 290,
+            "width": 140,
+            "height": 24
+          },
+          {
+            "x": 980,
+            "y": 350,
+            "width": 160,
+            "height": 24
+          },
+          {
+            "x": 1240,
+            "y": 280,
+            "width": 140,
+            "height": 24
+          },
+          {
+            "x": 1520,
+            "y": 355,
+            "width": 120,
+            "height": 24
+          },
+          {
+            "x": 1720,
+            "y": 345,
+            "width": 160,
+            "height": 24
+          },
+          {
+            "x": 1980,
+            "y": 275,
+            "width": 140,
+            "height": 24
+          },
+          {
+            "x": 2160,
+            "y": 355,
+            "width": 140,
+            "height": 24
+          }
+        ],
+        "collectibles": [
+          {
+            "x": 200,
+            "y": 412,
+            "kind": "star"
+          },
+          {
+            "x": 300,
+            "y": 314,
+            "kind": "star"
+          },
+          {
+            "x": 560,
+            "y": 244,
+            "kind": "star"
+          },
+          {
+            "x": 700,
+            "y": 412,
+            "kind": "star"
+          },
+          {
+            "x": 980,
+            "y": 304,
+            "kind": "star"
+          },
+          {
+            "x": 1100,
+            "y": 412,
+            "kind": "star"
+          },
+          {
+            "x": 1240,
+            "y": 234,
+            "kind": "star"
+          },
+          {
+            "x": 1400,
+            "y": 412,
+            "kind": "star"
+          },
+          {
+            "x": 1520,
+            "y": 309,
+            "kind": "star"
+          },
+          {
+            "x": 1720,
+            "y": 299,
+            "kind": "star"
+          },
+          {
+            "x": 1980,
+            "y": 229,
+            "kind": "star"
+          },
+          {
+            "x": 2160,
+            "y": 309,
+            "kind": "star"
+          },
+          {
+            "x": 2280,
+            "y": 412,
+            "kind": "star"
+          }
+        ],
+        "enemies": [
+          {
+            "x": 1150,
+            "y": 420,
+            "patrol": {
+              "minX": 1020,
+              "maxX": 1320
+            },
+            "speed": 0
+          },
+          {
+            "x": 1850,
+            "y": 420,
+            "patrol": {
+              "minX": 1700,
+              "maxX": 2000
+            },
+            "speed": 0
+          }
+        ],
+        "goal": {
+          "x": 2300,
+          "y": 400,
+          "kind": "flag"
+        },
+        "weather": "clear",
+        "sounds": {
+          "jump": "boing",
+          "collect": "ding",
+          "win": "tada"
+        }
+      }
     }
   ]
 }
