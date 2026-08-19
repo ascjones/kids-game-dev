@@ -3,6 +3,7 @@ import type { Environment, EnemyDef } from './environmentSchema';
 import { starterEnvironment } from './starterEnvironment';
 import type { ApiRuntime, GameBackend, KeyName } from '../runtime/gameApi';
 import { playBeep } from './sounds';
+import { viewToWorld } from './viewCoords';
 
 /** Scene-side facts the challenge checks need beyond the runtime's stats. */
 export interface SceneStats {
@@ -529,12 +530,26 @@ export class PlatformerScene extends Phaser.Scene implements GameBackend {
   }
 
   spawnPlatform(x: number, y: number, width: number): void {
-    this.addPlatformSprite(x, y, width, 24);
+    const at = this.toWorldPoint(x, y);
+    // Width is a size, not a position, so it passes through untranslated.
+    this.addPlatformSprite(at.x, at.y, width, 24);
     this.stats.platformCount += 1;
   }
 
   spawnCollectible(x: number, y: number): void {
-    this.addCollectibleSprite(x, y);
+    const at = this.toWorldPoint(x, y);
+    this.addCollectibleSprite(at.x, at.y);
+  }
+
+  /**
+   * Kid block coordinates are relative to what the child can currently see
+   * (R4), so spawns read the camera scroll at the moment the block runs (R6).
+   * Only these GameBackend spawns translate: the harness-authored sprites
+   * buildWorld() creates are world-absolute (R7).
+   */
+  private toWorldPoint(x: number, y: number): { x: number; y: number } {
+    const camera = this.cameras.main;
+    return viewToWorld(camera.scrollX, camera.scrollY, x, y, this.environment.world);
   }
 
   setEnemyPatrol(speed: number): void {
