@@ -1,10 +1,15 @@
 import { createGame } from './game/boot';
 import { PlatformerScene } from './game/PlatformerScene';
 import { fetchEnvironment } from './game/environmentLoader';
-import { EnvironmentSync } from './game/environmentSync';
+import {
+  EnvironmentSync,
+  resolveBootEnvironment,
+  swapWorldForChallenge,
+} from './game/environmentSync';
 import type { Environment } from './game/environmentSchema';
 import { createEditor, type EditorHandle } from './blocks/editor';
 import { ChallengeEngine } from './challenges/engine';
+import { hasChallengeEnvironmentApplied } from './challenges/types';
 import { fetchChallenges } from './challenges/loader';
 import { createChallengePanel, type PanelView } from './ui/challengePanel';
 import { createGameMakerBox } from './ui/gameMakerBox';
@@ -96,6 +101,19 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
     challengesResult.challenges,
     seed.challengeProgress ?? undefined,
   );
+  // A challenge may carry its own world (KTD4). Normally it lands during the
+  // transition into that challenge; this catches the cases where the engine
+  // arrives already sitting on such a challenge — the tab closed between the
+  // transition and the save, or a project was imported mid-arc. Already-applied
+  // worlds report nothing pending, so a plain reload never overwrites what the
+  // child (or the harness) has since changed.
+  function applyPendingChallengeWorld(): void {
+    const pending = engine.pendingEnvironment();
+    if (!pending) return;
+    scene.setEnvironment(pending);
+    engine.markEnvironmentApplied();
+  }
+  applyPendingChallengeWorld();
 
   const editor: EditorHandle = createEditor(
     document.querySelector<HTMLElement>('#blockly-container')!,
@@ -136,9 +154,21 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
       editor.setToolboxCategories(engine.toolboxCategories(), engine.justUnlocked());
       renderPanel();
       autosaver.trigger();
-      // A running session carries stats from the previous challenge; restart
-      // so the new challenge starts from a clean slate.
-      if (playTest?.isPlaying()) startPlaying();
+      // The new challenge may bring its own world, and a running session
+      // carries stats (and a scene) from the previous one — so stop, swap,
+      // then start the new challenge from a clean slate.
+      void swapWorldForChallenge(engine.pendingEnvironment(), {
+        isPlayTestActive: () => playTest?.isPlaying() ?? false,
+        cancelPlayTest: () => playTest?.cancel(),
+        startPlayTest: () => startPlaying(),
+        applyEnvironment: async (environment) => {
+          await envSync.applyChallengeEnvironment(environment);
+          engine.markEnvironmentApplied();
+          autosaver.trigger();
+        },
+      }).catch(() => {
+        notice.info("That challenge's new world got stuck on its way here — keep playing, we'll try again next time!");
+      });
     },
   });
 
@@ -206,6 +236,10 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
 
   let playTest: SessionController | null = null;
   let sessionStartedAt = 0;
+  // Which challenge the running session was started on. Advancing cancels the
+  // session, and a cancelled session must be judged against the challenge it
+  // was played on — never the one just moved to, whose check may be identical.
+  let sessionChallengeId: string | null = null;
   let emptyNudgeShown = false;
 
   // Start (or restart) a play session — the editor-closed mode.
@@ -215,6 +249,7 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
     const result = playTest.start();
     if (result.started) {
       sessionStartedAt = Date.now();
+      sessionChallengeId = engine.current()?.id ?? null;
     } else if (result.empty && !emptyNudgeShown) {
       emptyNudgeShown = true;
       notice.info('Your game is waiting for blocks! Press 🧩 Build blocks to make something happen.');
@@ -276,6 +311,11 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
           // Entering Build mode is the natural "attempt over" moment — but only
           // judge sessions that actually got played, not quick in-and-outs.
           if (Date.now() - sessionStartedAt < 3000) return;
+          // Advancing to the next challenge also cancels the session. Judging
+          // it now would score the previous challenge's play against the new
+          // one — and consecutive challenges can share a check, which would
+          // complete the new challenge before the child ever attempts it.
+          if (sessionChallengeId !== (engine.current()?.id ?? null)) return;
           const result = engine.evaluate(state);
           if (result === 'completed') {
             onChallengeCompleted();
@@ -322,6 +362,10 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
           await saveProject(record);
           scene.setEnvironment(record.environment);
           engine = new ChallengeEngine(challengesResult.challenges, record.challengeProgress);
+          // An older save can land straight onto a challenge that carries a
+          // world; without this the child would play the journey on the small
+          // world their file was saved with.
+          applyPendingChallengeWorld();
           editor.load(record.workspace);
           editor.setToolboxCategories(engine.toolboxCategories());
           renderPanel();
@@ -455,6 +499,9 @@ async function bootWorkbench(seed: WorkbenchSeed): Promise<void> {
       },
       currentChallengeId: () => engine.current()?.id ?? null,
       getCode: () => editor.getCode(),
+      // Camera scroll, world size and sprite world coordinates — the scrolling
+      // behaviours are invisible from the DOM, so the specs read them here.
+      snapshot: () => scene.debugSnapshot(),
     };
   }
 }
@@ -467,10 +514,16 @@ async function start(): Promise<void> {
 
   if (saved) {
     intakeRoot.remove();
-    // Prefer the harness's current world; fall back to the saved snapshot.
+    // Prefer the harness's current world; fall back to the saved snapshot —
+    // unless this game is already living on a challenge-carried world, which
+    // outranks the harness file so a reload cannot shrink it back (KTD4).
     const result = await fetchEnvironment();
     await bootWorkbench({
-      environment: result.source === 'loaded' ? result.environment : saved.environment,
+      environment: resolveBootEnvironment(
+        result,
+        saved.environment,
+        hasChallengeEnvironmentApplied(saved.challengeProgress),
+      ),
       idea: saved.idea,
       id: saved.id || null,
       workspace: saved.workspace,

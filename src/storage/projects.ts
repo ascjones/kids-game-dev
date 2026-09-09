@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { environmentSchema } from '../game/environmentSchema';
+import { starterEnvironment } from '../game/starterEnvironment';
 import { challengeProgressSchema } from '../challenges/types';
 import { getDb, PROJECT_STORE } from './db';
 
@@ -27,8 +28,26 @@ export async function loadProject(): Promise<ProjectRecord | null> {
   const db = await getDb();
   const raw = await db.get(PROJECT_STORE, CURRENT_KEY);
   if (raw === undefined) return null;
+  return parseStoredProject(raw);
+}
+
+/**
+ * Parse a stored project, rescuing the child's work when only its world is
+ * unusable. The environment schema is the part that tightens over time (world
+ * bounds, new required fields), and a whole-record rejection would throw away
+ * the blocks and challenge progress too — which reads to the child as "my game
+ * is gone". A world we cannot parse degrades to the starter world instead; the
+ * harness or the next challenge replaces it soon enough.
+ */
+export function parseStoredProject(raw: unknown): ProjectRecord | null {
   const parsed = projectRecordSchema.safeParse(raw);
-  return parsed.success ? parsed.data : null;
+  if (parsed.success) return parsed.data;
+  if (raw === null || typeof raw !== 'object') return null;
+  const rescued = projectRecordSchema.safeParse({
+    ...(raw as Record<string, unknown>),
+    environment: starterEnvironment,
+  });
+  return rescued.success ? rescued.data : null;
 }
 
 export async function hasProject(): Promise<boolean> {

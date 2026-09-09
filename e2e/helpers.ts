@@ -36,6 +36,44 @@ export function dropInbox(name: string, message: unknown): void {
   fs.renameSync(temp, path.join(INBOX, name));
 }
 
+/**
+ * Run a test against a substitute world file. `game/environment/environment.json`
+ * holds a real child's game, so the original always comes back — even when the
+ * body throws.
+ */
+export async function withEnvironment<T>(
+  environment: unknown,
+  run: () => Promise<T>,
+): Promise<T> {
+  const original = fs.readFileSync(ENVIRONMENT_JSON, 'utf8');
+  try {
+    fs.writeFileSync(ENVIRONMENT_JSON, JSON.stringify(environment, null, 2));
+    return await run();
+  } finally {
+    fs.writeFileSync(ENVIRONMENT_JSON, original);
+  }
+}
+
+/** What the dev seam reports about the running scene. */
+export interface GameSnapshot {
+  camera: { scrollX: number; scrollY: number };
+  world: { width: number; height: number };
+  player: { x: number; y: number };
+  platforms: Array<{ x: number; y: number }>;
+}
+
+interface KidGameSeam {
+  loadWorkspace(state: unknown): void;
+  currentChallengeId(): string | null;
+  getCode(): string;
+  snapshot(): GameSnapshot;
+}
+
+/** Read the camera, world and sprite positions out of the running game. */
+export function readSnapshot(page: Page): Promise<GameSnapshot> {
+  return page.evaluate(() => (window as unknown as { __kidGame: KidGameSeam }).__kidGame.snapshot());
+}
+
 /** Get past intake to the workbench, using the bundled starter world. */
 export async function bootToWorkbench(page: Page, idea = 'a brave test robot'): Promise<void> {
   await page.goto('/');
@@ -67,6 +105,53 @@ export async function playProgram(page: Page, blocks: unknown[]): Promise<void> 
   );
   await page.keyboard.press('Escape');
   await expect(overlay).toBeHidden();
+}
+
+/**
+ * Rewrite the saved project's challenge progress, then reload. Walking the
+ * whole arc to reach a late challenge costs minutes; the save is the app's own
+ * resume path, so a seeded save exercises the same boot code a returning child
+ * hits. Call after the workbench has booted once (the save must exist).
+ */
+export async function seedChallengeProgress(
+  page: Page,
+  completedIds: string[],
+  currentIndex: number,
+): Promise<void> {
+  // Let the boot autosave land first, or the reload would race it.
+  await page.waitForTimeout(1500);
+  await page.evaluate(
+    async ({ completedIds, currentIndex }) => {
+      const openDatabase = () =>
+        new Promise<IDBDatabase>((resolve, reject) => {
+          const request = indexedDB.open('kids-game-dev');
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => resolve(request.result);
+        });
+
+      const db = await openDatabase();
+      const record = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        const get = db.transaction('projects', 'readonly').objectStore('projects').get('current');
+        get.onerror = () => reject(get.error);
+        get.onsuccess = () => resolve(get.result);
+      });
+      if (!record) throw new Error('no saved project to seed progress into');
+      record.challengeProgress = {
+        ...(record.challengeProgress as Record<string, unknown>),
+        completedIds,
+        currentIndex,
+      };
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction('projects', 'readwrite');
+        tx.objectStore('projects').put(record, 'current');
+        tx.onerror = () => reject(tx.error);
+        tx.oncomplete = () => resolve();
+      });
+    },
+    { completedIds, currentIndex },
+  );
+  await page.reload();
+  await page.waitForFunction(() => '__kidGame' in window);
 }
 
 // ---- Block program builders (workspace JSON, same shapes the editor saves) --

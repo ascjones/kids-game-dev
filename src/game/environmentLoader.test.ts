@@ -48,6 +48,41 @@ describe('loadEnvironmentFromData', () => {
     expect(result.environment).toEqual(starterEnvironment);
   });
 
+  it('defaults the world to 800×480 when world is omitted', () => {
+    const result = loadEnvironmentFromData(validEnvironment);
+    expect(result.source).toBe('loaded');
+    expect(result.environment.world).toEqual({ width: 800, height: 480 });
+  });
+
+  it('accepts a world at the maximum size (4800×2880)', () => {
+    const result = loadEnvironmentFromData({
+      ...validEnvironment,
+      world: { width: 4800, height: 2880 },
+    });
+    expect(result.source).toBe('loaded');
+    expect(result.environment.world).toEqual({ width: 4800, height: 2880 });
+  });
+
+  it('falls back when the world is wider than 4800', () => {
+    const result = loadEnvironmentFromData({
+      ...validEnvironment,
+      world: { width: 4801, height: 480 },
+    });
+    expect(result.source).toBe('fallback');
+    expect(result.environment).toEqual(starterEnvironment);
+    expect(result.kidMessage).toBe(FALLBACK_KID_MESSAGE);
+  });
+
+  it('falls back when the world is taller than 2880', () => {
+    const result = loadEnvironmentFromData({
+      ...validEnvironment,
+      world: { width: 800, height: 2881 },
+    });
+    expect(result.source).toBe('fallback');
+    expect(result.environment).toEqual(starterEnvironment);
+    expect(result.kidMessage).toBe(FALLBACK_KID_MESSAGE);
+  });
+
   it('ignores unknown extra fields instead of failing', () => {
     const withExtras = {
       ...validEnvironment,
